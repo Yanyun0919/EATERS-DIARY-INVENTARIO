@@ -165,6 +165,8 @@ create table product_aliases (
 create index product_aliases_product_id_idx on product_aliases(product_id);
 create index product_aliases_alias_idx on product_aliases(alias);
 
+-- costing only for now — no link to inventory deduction or POS/sales; that integration is
+-- explicitly out of scope until requested (see docs/01_DATABASE_DESIGN.md)
 create table recipes (
   id uuid primary key default gen_random_uuid(),
   brand_id uuid not null references brands(id) on delete restrict,
@@ -321,7 +323,10 @@ create index stock_count_items_stock_count_id_idx on stock_count_items(stock_cou
 create index stock_count_items_product_id_idx on stock_count_items(product_id);
 
 -- ============================================================
--- STORE TRANSFERS (cross-brand allowed)
+-- STORE TRANSFERS / INTERNAL PURCHASING (cross-brand allowed; e.g. central kitchen to
+-- stores). unit_price on transfer_items is the internal valuation price, not a supplier
+-- price — mirrors purchase_order_items but has no iva_rate since these are internal
+-- movements between the company's own stores, not external supplier invoices.
 -- ============================================================
 
 create table store_transfers (
@@ -348,6 +353,8 @@ create table transfer_items (
   unit_id uuid not null references units(id) on delete restrict,
   quantity_sent numeric(14, 4) not null check (quantity_sent > 0),
   quantity_received numeric(14, 4) check (quantity_received >= 0),
+  unit_price numeric(12, 4) not null check (unit_price >= 0),
+  line_total numeric(14, 4) generated always as (quantity_sent * unit_price) stored,
   created_at timestamptz not null default now()
 );
 
@@ -416,7 +423,7 @@ create table inventory_movements (
     or (movement_type in ('transfer_in', 'transfer_out') and transfer_item_id is not null)
     or (movement_type = 'stock_count_adjustment' and stock_count_item_id is not null)
     or (movement_type = 'waste' and waste_record_id is not null)
-    or (movement_type in ('manual_adjustment', 'pos_deduction'))
+    or (movement_type = 'manual_adjustment')
   )
 );
 
@@ -430,7 +437,6 @@ create index inventory_movements_movement_type_idx on inventory_movements(moveme
 
 create trigger set_updated_at before update on brands for each row execute function set_updated_at();
 create trigger set_updated_at before update on stores for each row execute function set_updated_at();
-create trigger set_updated_at before update on storage_locations for each row execute function set_updated_at();
 create trigger set_updated_at before update on staff_profiles for each row execute function set_updated_at();
 create trigger set_updated_at before update on categories for each row execute function set_updated_at();
 create trigger set_updated_at before update on products for each row execute function set_updated_at();
@@ -449,7 +455,6 @@ create trigger set_updated_at before update on inventory for each row execute fu
 
 alter table brands enable row level security;
 alter table stores enable row level security;
-alter table storage_locations enable row level security;
 alter table staff_profiles enable row level security;
 alter table staff_stores enable row level security;
 alter table categories enable row level security;
