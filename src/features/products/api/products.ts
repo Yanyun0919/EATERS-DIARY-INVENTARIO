@@ -8,22 +8,17 @@ export interface ProductFilters {
 
 export interface ProductInput {
   name: string
-  sku: string | null
-  categoryId: string | null
+  categoryId: string
   baseUnitId: string
+  minimumStock: number
   isStockTracked: boolean
-}
-
-function escapeIlikeTerm(term: string) {
-  return term.replace(/\\/g, '\\\\').replace(/"/g, '\\"')
 }
 
 export async function listProducts(filters: ProductFilters = {}) {
   let query = supabase.from('products').select('*').order('name', { ascending: true })
 
   if (filters.search?.trim()) {
-    const term = escapeIlikeTerm(filters.search.trim())
-    query = query.or(`name.ilike."%${term}%",sku.ilike."%${term}%"`)
+    query = query.ilike('name', `%${filters.search.trim()}%`)
   }
   if (filters.categoryId) {
     query = query.eq('category_id', filters.categoryId)
@@ -48,9 +43,9 @@ export async function createProduct(input: ProductInput) {
     .from('products')
     .insert({
       name: input.name,
-      sku: input.sku,
       category_id: input.categoryId,
       base_unit_id: input.baseUnitId,
+      minimum_stock: input.minimumStock,
       is_stock_tracked: input.isStockTracked,
     })
     .select()
@@ -64,9 +59,9 @@ export async function updateProduct(id: string, input: ProductInput) {
     .from('products')
     .update({
       name: input.name,
-      sku: input.sku,
       category_id: input.categoryId,
       base_unit_id: input.baseUnitId,
+      minimum_stock: input.minimumStock,
       is_stock_tracked: input.isStockTracked,
     })
     .eq('id', id)

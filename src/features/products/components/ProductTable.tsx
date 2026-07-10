@@ -35,24 +35,26 @@ export function ProductTable({
         <thead>
           <tr className="border-b border-border bg-black/[0.02]">
             <th className="px-3 py-2 font-medium">Name</th>
-            <th className="px-3 py-2 font-medium">SKU</th>
             <th className="px-3 py-2 font-medium">Category</th>
-            <th className="px-3 py-2 font-medium">Base unit</th>
+            <th className="px-3 py-2 font-medium">Inventory Unit</th>
+            <th className="px-3 py-2 font-medium">Min. Stock</th>
             <th className="px-3 py-2 font-medium">Status</th>
             <th className="px-3 py-2 font-medium" />
           </tr>
         </thead>
         <tbody>
           {products.map((product) => {
-            const category = product.category_id ? categoriesById.get(product.category_id) : undefined
+            const category = categoriesById.get(product.category_id)
             const unit = unitsById.get(product.base_unit_id)
 
             return (
               <tr key={product.id} className="border-b border-border last:border-0">
                 <td className="px-3 py-2">{product.name}</td>
-                <td className="px-3 py-2 text-neutral-500">{product.sku ?? '—'}</td>
                 <td className="px-3 py-2 text-neutral-500">{category?.name ?? '—'}</td>
                 <td className="px-3 py-2 text-neutral-500">{unit?.abbreviation ?? '—'}</td>
+                <td className="px-3 py-2 text-neutral-500">
+                  {product.minimum_stock} {unit?.abbreviation ?? ''}
+                </td>
                 <td className="px-3 py-2">
                   <span
                     className={cn(

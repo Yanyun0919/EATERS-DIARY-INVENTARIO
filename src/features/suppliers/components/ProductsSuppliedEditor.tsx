@@ -2,33 +2,33 @@ import { useState, type FormEvent } from 'react'
 import type { Database } from '@/core/supabase/database.types'
 import { Button } from '@/shared/components/Button'
 import {
-  supplierProductFormSchema,
-  type SupplierProductFormValues,
-} from '@/features/products/schemas/product'
+  productSupplierFormSchema,
+  purchaseUnitOptions,
+  type ProductSupplierFormValues,
+} from '@/features/suppliers/schemas/supplier'
 import {
-  upsertSupplierProduct,
-  deleteSupplierProduct,
-  type SupplierProductInput,
-} from '@/features/products/api/productRelations'
+  upsertProductSupplier,
+  deleteProductSupplier,
+  type ProductSupplierInput,
+} from '@/features/suppliers/api/productSuppliers'
 
-type Supplier = Database['public']['Tables']['suppliers']['Row']
-type Unit = Database['public']['Tables']['units']['Row']
+type Product = Pick<Database['public']['Tables']['products']['Row'], 'id' | 'name' | 'base_unit_id'>
 type SupplierProduct = Database['public']['Tables']['supplier_products']['Row']
 
-interface SupplierLinksEditorProps {
-  productId: string
+interface ProductsSuppliedEditorProps {
+  supplierId: string
   links: SupplierProduct[]
-  suppliers: Supplier[]
-  units: Unit[]
+  products: Product[]
   canWrite: boolean
   onChanged: () => void
 }
 
-const emptyForm: SupplierProductFormValues = {
-  supplierId: '',
+const emptyForm: ProductSupplierFormValues = {
+  productId: '',
   supplierSku: '',
   unitPrice: 0,
-  purchaseUnitId: '',
+  purchaseUnit: 'kg',
+  purchaseUnitSpec: '',
   moq: 1,
   leadTimeDays: null,
   ivaRate: 10,
@@ -38,14 +38,13 @@ const emptyForm: SupplierProductFormValues = {
 
 const inputClasses = 'rounded-md border border-border bg-transparent px-2 py-1 text-sm outline-none focus:border-accent'
 
-export function SupplierLinksEditor({ productId, links, suppliers, units, canWrite, onChanged }: SupplierLinksEditorProps) {
+export function ProductsSuppliedEditor({ supplierId, links, products, canWrite, onChanged }: ProductsSuppliedEditorProps) {
   const [editingId, setEditingId] = useState<string | null>(null)
-  const [form, setForm] = useState<SupplierProductFormValues>(emptyForm)
+  const [form, setForm] = useState<ProductSupplierFormValues>(emptyForm)
   const [error, setError] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
 
-  const suppliersById = new Map(suppliers.map((supplier) => [supplier.id, supplier]))
-  const unitsById = new Map(units.map((unit) => [unit.id, unit]))
+  const productsById = new Map(products.map((product) => [product.id, product]))
 
   function startAdd() {
     setEditingId('new')
@@ -56,10 +55,11 @@ export function SupplierLinksEditor({ productId, links, suppliers, units, canWri
   function startEdit(link: SupplierProduct) {
     setEditingId(link.id)
     setForm({
-      supplierId: link.supplier_id,
+      productId: link.product_id,
       supplierSku: link.supplier_sku ?? '',
       unitPrice: Number(link.unit_price),
-      purchaseUnitId: link.purchase_unit_id,
+      purchaseUnit: link.purchase_unit,
+      purchaseUnitSpec: link.purchase_unit_spec ?? '',
       moq: Number(link.moq),
       leadTimeDays: link.lead_time_days,
       ivaRate: Number(link.iva_rate),
@@ -77,7 +77,7 @@ export function SupplierLinksEditor({ productId, links, suppliers, units, canWri
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault()
-    const result = supplierProductFormSchema.safeParse(form)
+    const result = productSupplierFormSchema.safeParse(form)
     if (!result.success) {
       setError(result.error.issues[0]?.message ?? 'Invalid value')
       return
@@ -86,20 +86,21 @@ export function SupplierLinksEditor({ productId, links, suppliers, units, canWri
     setSubmitting(true)
     setError(null)
     try {
-      const input: SupplierProductInput = {
+      const input: ProductSupplierInput = {
         id: editingId !== 'new' ? (editingId ?? undefined) : undefined,
-        productId,
-        supplierId: result.data.supplierId,
+        supplierId,
+        productId: result.data.productId,
         supplierSku: result.data.supplierSku || null,
         unitPrice: result.data.unitPrice,
-        purchaseUnitId: result.data.purchaseUnitId,
+        purchaseUnit: result.data.purchaseUnit,
+        purchaseUnitSpec: result.data.purchaseUnit === 'other' ? result.data.purchaseUnitSpec : null,
         moq: result.data.moq,
         leadTimeDays: result.data.leadTimeDays,
         ivaRate: result.data.ivaRate,
         isPreferred: result.data.isPreferred,
         isAvailable: result.data.isAvailable,
       }
-      await upsertSupplierProduct(input)
+      await upsertProductSupplier(input)
       cancel()
       onChanged()
     } catch (err) {
@@ -110,23 +111,23 @@ export function SupplierLinksEditor({ productId, links, suppliers, units, canWri
   }
 
   async function handleDelete(id: string) {
-    await deleteSupplierProduct(id)
+    await deleteProductSupplier(id)
     onChanged()
   }
 
   return (
     <div className="space-y-2">
       <div className="flex items-center justify-between">
-        <h2 className="text-sm font-semibold">Suppliers</h2>
+        <h2 className="text-sm font-semibold">Products supplied</h2>
         {canWrite && editingId === null && (
           <Button variant="secondary" onClick={startAdd} className="px-2 py-1 text-xs">
-            Add supplier
+            Add product
           </Button>
         )}
       </div>
 
       {links.length === 0 && editingId === null && (
-        <p className="text-sm text-neutral-500">No suppliers linked to this product yet.</p>
+        <p className="text-sm text-neutral-500">This supplier doesn't supply any products yet.</p>
       )}
 
       <ul className="space-y-1">
@@ -134,7 +135,7 @@ export function SupplierLinksEditor({ productId, links, suppliers, units, canWri
           <li key={link.id} className="rounded-md border border-border px-3 py-2 text-sm">
             <div className="flex items-center justify-between">
               <span className="font-medium">
-                {suppliersById.get(link.supplier_id)?.name ?? 'Unknown supplier'}
+                {productsById.get(link.product_id)?.name ?? 'Unknown product'}
                 {link.is_preferred && <span className="ml-2 text-xs text-accent">Preferred</span>}
                 {!link.is_available && <span className="ml-2 text-xs text-neutral-500">Unavailable</span>}
               </span>
@@ -150,8 +151,8 @@ export function SupplierLinksEditor({ productId, links, suppliers, units, canWri
               )}
             </div>
             <div className="text-neutral-500">
-              {link.unit_price} € / {unitsById.get(link.purchase_unit_id)?.abbreviation ?? '?'} · MOQ {link.moq} · IVA{' '}
-              {link.iva_rate}%
+              {link.unit_price} € / {link.purchase_unit === 'other' ? link.purchase_unit_spec : link.purchase_unit} · MOQ{' '}
+              {link.moq} · IVA {link.iva_rate}%
               {link.supplier_sku ? ` · SKU ${link.supplier_sku}` : ''}
               {link.lead_time_days !== null ? ` · ${link.lead_time_days}d lead time` : ''}
             </div>
@@ -163,16 +164,16 @@ export function SupplierLinksEditor({ productId, links, suppliers, units, canWri
         <form onSubmit={handleSubmit} className="space-y-2 rounded-md border border-border p-3">
           <div className="flex flex-wrap gap-2">
             <div className="space-y-1">
-              <label className="text-xs font-medium">Supplier</label>
+              <label className="text-xs font-medium">Product</label>
               <select
-                value={form.supplierId}
-                onChange={(event) => setForm({ ...form, supplierId: event.target.value })}
+                value={form.productId}
+                onChange={(event) => setForm({ ...form, productId: event.target.value })}
                 className={inputClasses}
               >
                 <option value="">Select…</option>
-                {suppliers.map((supplier) => (
-                  <option key={supplier.id} value={supplier.id}>
-                    {supplier.name}
+                {products.map((product) => (
+                  <option key={product.id} value={product.id}>
+                    {product.name}
                   </option>
                 ))}
               </select>
@@ -195,21 +196,36 @@ export function SupplierLinksEditor({ productId, links, suppliers, units, canWri
                 className={`${inputClasses} w-24`}
               />
             </div>
+          </div>
+
+          <div className="flex flex-wrap items-end gap-2">
             <div className="space-y-1">
-              <label className="text-xs font-medium">Purchase unit</label>
+              <label className="text-xs font-medium">Purchase Unit</label>
               <select
-                value={form.purchaseUnitId}
-                onChange={(event) => setForm({ ...form, purchaseUnitId: event.target.value })}
+                value={form.purchaseUnit}
+                onChange={(event) =>
+                  setForm({ ...form, purchaseUnit: event.target.value as ProductSupplierFormValues['purchaseUnit'] })
+                }
                 className={inputClasses}
               >
-                <option value="">Select…</option>
-                {units.map((unit) => (
-                  <option key={unit.id} value={unit.id}>
-                    {unit.abbreviation}
+                {purchaseUnitOptions.map((option) => (
+                  <option key={option} value={option}>
+                    {option === 'other' ? 'Other' : option}
                   </option>
                 ))}
               </select>
             </div>
+            {form.purchaseUnit === 'other' && (
+              <div className="space-y-1">
+                <label className="text-xs font-medium">Specification</label>
+                <input
+                  value={form.purchaseUnitSpec}
+                  onChange={(event) => setForm({ ...form, purchaseUnitSpec: event.target.value })}
+                  placeholder='e.g. "24 cans/box"'
+                  className={`${inputClasses} w-48`}
+                />
+              </div>
+            )}
           </div>
 
           <div className="flex flex-wrap gap-2">
@@ -253,7 +269,7 @@ export function SupplierLinksEditor({ productId, links, suppliers, units, canWri
                 checked={form.isPreferred}
                 onChange={(event) => setForm({ ...form, isPreferred: event.target.checked })}
               />
-              Preferred supplier
+              Preferred supplier for this product
             </label>
             <label className="flex items-center gap-2 text-sm">
               <input

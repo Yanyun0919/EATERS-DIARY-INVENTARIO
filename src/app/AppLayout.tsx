@@ -1,14 +1,23 @@
 import { NavLink, Outlet } from 'react-router-dom'
 import { useAuth } from '@/core/auth/useAuth'
+import { useStaffProfile } from '@/core/auth/useStaffProfile'
 import { OfflineBanner } from '@/shared/components/OfflineBanner'
 import { Button } from '@/shared/components/Button'
 import { ROUTES } from '@/shared/constants/routes'
 import { cn } from '@/shared/utils/cn'
 
-const navItems = [{ label: 'Products', to: ROUTES.PRODUCTS }]
+const navItems = [
+  { label: 'Products', to: ROUTES.PRODUCTS },
+  { label: 'Suppliers', to: ROUTES.SUPPLIERS },
+]
+
+const adminOnlyNavItems = [{ label: 'Stores', to: ROUTES.STORES }]
 
 export function AppLayout() {
   const { user, signOut } = useAuth()
+  const { isAdministrator } = useStaffProfile()
+
+  const items = isAdministrator ? [...navItems, ...adminOnlyNavItems] : navItems
 
   return (
     <div className="flex min-h-svh flex-col">
@@ -16,7 +25,7 @@ export function AppLayout() {
       <header className="flex items-center justify-between border-b border-border px-4 py-3">
         <nav className="flex items-center gap-4">
           <span className="text-sm font-semibold">Eaters Diary</span>
-          {navItems.map((item) => (
+          {items.map((item) => (
             <NavLink
               key={item.to}
               to={item.to}

@@ -1,4 +1,4 @@
-import { useAsync } from '@/features/products/hooks/useAsync'
+import { useAsync } from '@/shared/hooks/useAsync'
 import { listProducts, type ProductFilters } from '@/features/products/api/products'
 
 export function useProducts(filters: ProductFilters) {

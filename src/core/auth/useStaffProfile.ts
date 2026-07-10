@@ -40,7 +40,10 @@ export function useStaffProfile() {
     }
   }, [user])
 
-  const canWriteMasterData = profile?.role === 'admin' || profile?.role === 'manager'
+  // mirrors the backend's is_active_staff_writer()/is_internal_products_writer() — both are
+  // pure administrator checks as of migration 012 (tightened from administrator/purchasing)
+  const isAdministrator = profile?.role === 'administrator'
+  const canWriteMasterData = isAdministrator
 
-  return { profile, loading, canWriteMasterData }
+  return { profile, loading, isAdministrator, canWriteMasterData }
 }

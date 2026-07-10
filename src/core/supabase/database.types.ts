@@ -1,6 +1,6 @@
-// Hand-written to match supabase/migrations/001_initial_schema.sql + 002_master_data_rls_policies.sql.
-// Only covers tables the Products (Master Data) feature depends on today; extend as other
-// features land rather than typing the whole schema up front.
+// Hand-written to match supabase/migrations/001-012 (see supabase/migrations/). Only covers
+// tables the Products, Suppliers, and Stores (Master Data) features depend on today; extend as
+// other features land rather than typing the whole schema up front.
 //
 // Postgres `numeric` columns are serialized as strings by PostgREST on read (to avoid float
 // precision loss), so Row types use `string` for them while Insert/Update accept `number`.
@@ -10,9 +10,11 @@
 // `GenericSchema` (see @supabase/postgrest-js/src/types/common/common.ts). Omitting them
 // silently falls back to `never` for every Row/Insert/Update type instead of erroring loudly.
 
-export type StaffRole = 'admin' | 'manager' | 'staff'
+// Final V1 RBAC role model (migration 011) — replaced the earlier admin/manager/staff model.
+export type StaffRole = 'administrator' | 'purchasing' | 'retail_store' | 'production_center'
 export type UnitType = 'weight' | 'volume' | 'count'
-export type ProductAliasType = 'translation' | 'supplier_name' | 'barcode'
+export type PurchaseUnitType = 'kg' | 'g' | 'L' | 'ml' | 'other'
+export type StoreType = 'production_center' | 'retail_store'
 
 export interface Database {
   public: {
@@ -67,61 +69,23 @@ export interface Database {
         Row: {
           id: string
           name: string
-          sku: string | null
-          category_id: string | null
+          category_id: string
           base_unit_id: string
+          minimum_stock: string
           is_active: boolean
           is_stock_tracked: boolean
           created_at: string
           updated_at: string
         }
-        Insert: Partial<Database['public']['Tables']['products']['Row']> & {
+        Insert: Partial<Omit<Database['public']['Tables']['products']['Row'], 'minimum_stock'>> & {
           name: string
+          category_id: string
           base_unit_id: string
+          minimum_stock?: number
         }
-        Update: Partial<Database['public']['Tables']['products']['Row']>
-        Relationships: []
-      }
-      product_unit_conversions: {
-        Row: {
-          id: string
-          product_id: string
-          from_unit_id: string
-          to_unit_id: string
-          factor: string
-          created_at: string
+        Update: Partial<Omit<Database['public']['Tables']['products']['Row'], 'minimum_stock'>> & {
+          minimum_stock?: number
         }
-        Insert: {
-          id?: string
-          product_id: string
-          from_unit_id: string
-          to_unit_id: string
-          factor: number
-          created_at?: string
-        }
-        Update: Partial<Database['public']['Tables']['product_unit_conversions']['Insert']>
-        Relationships: []
-      }
-      product_aliases: {
-        Row: {
-          id: string
-          product_id: string
-          alias: string
-          alias_type: ProductAliasType
-          language_code: string | null
-          is_active: boolean
-          created_at: string
-        }
-        Insert: {
-          id?: string
-          product_id: string
-          alias: string
-          alias_type: ProductAliasType
-          language_code?: string | null
-          is_active?: boolean
-          created_at?: string
-        }
-        Update: Partial<Database['public']['Tables']['product_aliases']['Insert']>
         Relationships: []
       }
       suppliers: {
@@ -149,7 +113,8 @@ export interface Database {
           product_id: string
           supplier_sku: string | null
           unit_price: string
-          purchase_unit_id: string
+          purchase_unit: PurchaseUnitType
+          purchase_unit_spec: string | null
           moq: string
           lead_time_days: number | null
           iva_rate: string
@@ -165,7 +130,8 @@ export interface Database {
           product_id: string
           supplier_sku?: string | null
           unit_price: number
-          purchase_unit_id: string
+          purchase_unit: PurchaseUnitType
+          purchase_unit_spec?: string | null
           moq?: number
           lead_time_days?: number | null
           iva_rate?: number
@@ -176,6 +142,95 @@ export interface Database {
           updated_at?: string
         }
         Update: Partial<Database['public']['Tables']['supplier_products']['Insert']>
+        Relationships: []
+      }
+      brands: {
+        Row: {
+          id: string
+          name: string
+          code: string | null
+          nif_cif: string | null
+          is_active: boolean
+          created_at: string
+          updated_at: string
+        }
+        Insert: Partial<Database['public']['Tables']['brands']['Row']> & { name: string }
+        Update: Partial<Database['public']['Tables']['brands']['Row']>
+        Relationships: []
+      }
+      stores: {
+        Row: {
+          id: string
+          brand_id: string
+          name: string
+          code: string
+          address: string | null
+          type: StoreType
+          is_active: boolean
+          created_at: string
+          updated_at: string
+        }
+        Insert: Partial<Database['public']['Tables']['stores']['Row']> & {
+          brand_id: string
+          name: string
+          code: string
+          type: StoreType
+        }
+        Update: Partial<Database['public']['Tables']['stores']['Row']>
+        Relationships: []
+      }
+      staff_stores: {
+        Row: {
+          id: string
+          staff_profile_id: string
+          store_id: string
+          is_primary: boolean
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          staff_profile_id: string
+          store_id: string
+          is_primary?: boolean
+          created_at?: string
+        }
+        Update: Partial<Database['public']['Tables']['staff_stores']['Insert']>
+        Relationships: []
+      }
+      permission_definitions: {
+        Row: {
+          key: string
+          module: string
+          name: string
+          description: string | null
+          is_active: boolean
+          sort_order: number
+          created_at: string
+        }
+        Insert: Partial<Database['public']['Tables']['permission_definitions']['Row']> & {
+          key: string
+          module: string
+          name: string
+        }
+        Update: Partial<Database['public']['Tables']['permission_definitions']['Row']>
+        Relationships: []
+      }
+      store_permissions: {
+        Row: {
+          id: string
+          store_id: string
+          permission_key: string
+          granted_by: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          store_id: string
+          permission_key: string
+          granted_by?: string | null
+          created_at?: string
+        }
+        Update: Partial<Database['public']['Tables']['store_permissions']['Insert']>
         Relationships: []
       }
     }

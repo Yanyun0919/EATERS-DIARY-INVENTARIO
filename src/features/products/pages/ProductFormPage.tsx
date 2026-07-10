@@ -1,19 +1,11 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useStaffProfile } from '@/core/auth/useStaffProfile'
-import { ROUTES, productEditRoute } from '@/shared/constants/routes'
+import { ROUTES } from '@/shared/constants/routes'
 import { LoadingScreen } from '@/shared/components/LoadingScreen'
 import { getProduct, createProduct, updateProduct } from '@/features/products/api/products'
-import { useCategories, useUnits, useSuppliers } from '@/features/products/hooks/useProductLookups'
-import {
-  useSupplierProducts,
-  useUnitConversions,
-  useAliases,
-} from '@/features/products/hooks/useProductRelations'
+import { useCategories, useUnits } from '@/features/products/hooks/useProductLookups'
 import { ProductForm } from '@/features/products/components/ProductForm'
-import { SupplierLinksEditor } from '@/features/products/components/SupplierLinksEditor'
-import { UnitConversionsEditor } from '@/features/products/components/UnitConversionsEditor'
-import { ProductAliasesEditor } from '@/features/products/components/ProductAliasesEditor'
 import type { ProductFormValues } from '@/features/products/schemas/product'
 import type { Database } from '@/core/supabase/database.types'
 
@@ -21,18 +13,18 @@ type Product = Database['public']['Tables']['products']['Row']
 
 const emptyFormValues: ProductFormValues = {
   name: '',
-  sku: '',
   categoryId: '',
   baseUnitId: '',
+  minimumStock: 0,
   isStockTracked: true,
 }
 
 function toFormValues(product: Product): ProductFormValues {
   return {
     name: product.name,
-    sku: product.sku ?? '',
-    categoryId: product.category_id ?? '',
+    categoryId: product.category_id,
     baseUnitId: product.base_unit_id,
+    minimumStock: Number(product.minimum_stock),
     isStockTracked: product.is_stock_tracked,
   }
 }
@@ -49,10 +41,6 @@ export function ProductFormPage() {
 
   const { data: categories } = useCategories()
   const { data: units } = useUnits()
-  const { data: suppliers } = useSuppliers()
-  const { data: supplierLinks, refetch: refetchLinks } = useSupplierProducts(id ?? null)
-  const { data: conversions, refetch: refetchConversions } = useUnitConversions(id ?? null)
-  const { data: aliases, refetch: refetchAliases } = useAliases(id ?? null)
 
   useEffect(() => {
     if (isNew || !id) return
@@ -86,15 +74,15 @@ export function ProductFormPage() {
   async function handleSubmit(values: ProductFormValues) {
     const input = {
       name: values.name,
-      sku: values.sku || null,
-      categoryId: values.categoryId || null,
+      categoryId: values.categoryId,
       baseUnitId: values.baseUnitId,
+      minimumStock: values.minimumStock,
       isStockTracked: values.isStockTracked,
     }
 
     if (isNew) {
-      const created = await createProduct(input)
-      navigate(productEditRoute(created.id), { replace: true })
+      await createProduct(input)
+      navigate(ROUTES.PRODUCTS)
       return
     }
 
@@ -120,36 +108,6 @@ export function ProductFormPage() {
         submitLabel={isNew ? 'Create Product' : 'Save changes'}
         readOnly={readOnly}
       />
-
-      {isNew ? (
-        <p className="text-sm text-neutral-500">
-          Save the product first to add suppliers, unit conversions, or barcodes/translations.
-        </p>
-      ) : (
-        <div className="max-w-2xl space-y-6 border-t border-border pt-6">
-          <SupplierLinksEditor
-            productId={id!}
-            links={supplierLinks ?? []}
-            suppliers={suppliers ?? []}
-            units={units ?? []}
-            canWrite={canWriteMasterData}
-            onChanged={refetchLinks}
-          />
-          <UnitConversionsEditor
-            productId={id!}
-            conversions={conversions ?? []}
-            units={units ?? []}
-            canWrite={canWriteMasterData}
-            onChanged={refetchConversions}
-          />
-          <ProductAliasesEditor
-            productId={id!}
-            aliases={aliases ?? []}
-            canWrite={canWriteMasterData}
-            onChanged={refetchAliases}
-          />
-        </div>
-      )}
     </div>
   )
 }
