@@ -11,7 +11,10 @@ const navItems = [
   { label: 'Suppliers', to: ROUTES.SUPPLIERS },
 ]
 
-const adminOnlyNavItems = [{ label: 'Stores', to: ROUTES.STORES }]
+const adminOnlyNavItems = [
+  { label: 'Categories', to: ROUTES.CATEGORIES },
+  { label: 'Stores', to: ROUTES.STORES },
+]
 
 export function AppLayout() {
   const { user, signOut } = useAuth()

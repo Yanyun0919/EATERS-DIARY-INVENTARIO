@@ -10,6 +10,9 @@ export const ROUTES = {
   STORES: '/stores',
   STORE_NEW: '/stores/new',
   STORE_EDIT: '/stores/:id/edit',
+  CATEGORIES: '/categories',
+  CATEGORY_NEW: '/categories/new',
+  CATEGORY_EDIT: '/categories/:id/edit',
   STOCK_COUNT: '/stock-count',
   PURCHASE_CALCULATION: '/purchase-calculation',
   STORE_TRANSFERS: '/store-transfers',
@@ -26,4 +29,8 @@ export function supplierEditRoute(id: string) {
 
 export function storeEditRoute(id: string) {
   return `/stores/${id}/edit`
+}
+
+export function categoryEditRoute(id: string) {
+  return `/categories/${id}/edit`
 }

@@ -76,8 +76,27 @@ export async function setProductActive(id: string, isActive: boolean) {
   if (error) throw error
 }
 
+// For the product create/edit dropdown — active categories only, in the Display Order
+// configured in Category Management.
 export async function listCategories() {
-  const { data, error } = await supabase.from('categories').select('*').eq('is_active', true).order('name')
+  const { data, error } = await supabase
+    .from('categories')
+    .select('*')
+    .eq('is_active', true)
+    .order('sort_order', { ascending: true })
+    .order('name')
+  if (error) throw error
+  return data ?? []
+}
+
+// For resolving category names on the product list — includes inactive categories so a
+// product's category still displays correctly after that category is disabled.
+export async function listAllCategories() {
+  const { data, error } = await supabase
+    .from('categories')
+    .select('*')
+    .order('sort_order', { ascending: true })
+    .order('name')
   if (error) throw error
   return data ?? []
 }

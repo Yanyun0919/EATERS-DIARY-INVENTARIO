@@ -4,7 +4,7 @@ import { useStaffProfile } from '@/core/auth/useStaffProfile'
 import { Button } from '@/shared/components/Button'
 import { ROUTES } from '@/shared/constants/routes'
 import { useProducts } from '@/features/products/hooks/useProducts'
-import { useCategories, useUnits } from '@/features/products/hooks/useProductLookups'
+import { useCategories, useAllCategories, useUnits } from '@/features/products/hooks/useProductLookups'
 import { useDebouncedValue } from '@/shared/hooks/useDebouncedValue'
 import { setProductActive } from '@/features/products/api/products'
 import { ProductFilters, type ActiveFilter } from '@/features/products/components/ProductFilters'
@@ -22,6 +22,7 @@ export function ProductListPage() {
 
   const debouncedSearch = useDebouncedValue(search)
   const { data: categories } = useCategories()
+  const { data: allCategories } = useAllCategories()
   const { data: units } = useUnits()
 
   const {
@@ -36,8 +37,8 @@ export function ProductListPage() {
   })
 
   const categoriesById = useMemo(
-    () => new Map((categories ?? []).map((category) => [category.id, category])),
-    [categories],
+    () => new Map((allCategories ?? []).map((category) => [category.id, category])),
+    [allCategories],
   )
   const unitsById = useMemo(() => new Map((units ?? []).map((unit) => [unit.id, unit])), [units])
 

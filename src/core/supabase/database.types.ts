@@ -1,6 +1,6 @@
-// Hand-written to match supabase/migrations/001-012 (see supabase/migrations/). Only covers
-// tables the Products, Suppliers, and Stores (Master Data) features depend on today; extend as
-// other features land rather than typing the whole schema up front.
+// Hand-written to match supabase/migrations/001-013 (see supabase/migrations/). Only covers
+// tables the Products, Suppliers, Stores, and Categories (Master Data) features depend on
+// today; extend as other features land rather than typing the whole schema up front.
 //
 // Postgres `numeric` columns are serialized as strings by PostgREST on read (to avoid float
 // precision loss), so Row types use `string` for them while Insert/Update accept `number`.
@@ -40,7 +40,6 @@ export interface Database {
         Row: {
           id: string
           name: string
-          parent_category_id: string | null
           sort_order: number
           is_active: boolean
           created_at: string

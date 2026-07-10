@@ -6,6 +6,7 @@ import { LoginPage } from '@/features/auth'
 import { ProductListPage, ProductFormPage } from '@/features/products'
 import { SupplierListPage, SupplierFormPage } from '@/features/suppliers'
 import { StoreListPage, StoreFormPage } from '@/features/stores'
+import { CategoryListPage, CategoryFormPage } from '@/features/categories'
 import { ROUTES } from '@/shared/constants/routes'
 
 function App() {
@@ -34,6 +35,9 @@ function App() {
               <Route path={ROUTES.STORES} element={<StoreListPage />} />
               <Route path={ROUTES.STORE_NEW} element={<StoreFormPage />} />
               <Route path={ROUTES.STORE_EDIT} element={<StoreFormPage />} />
+              <Route path={ROUTES.CATEGORIES} element={<CategoryListPage />} />
+              <Route path={ROUTES.CATEGORY_NEW} element={<CategoryFormPage />} />
+              <Route path={ROUTES.CATEGORY_EDIT} element={<CategoryFormPage />} />
             </Route>
           </Route>
         </Routes>
