@@ -4,7 +4,6 @@ import { useStaffProfile } from '@/core/auth/useStaffProfile'
 import { ROUTES, storeEditRoute } from '@/shared/constants/routes'
 import { LoadingScreen } from '@/shared/components/LoadingScreen'
 import { getStore, createStore, updateStore } from '@/features/stores/api/stores'
-import { useBrands } from '@/features/stores/hooks/useStores'
 import { usePermissionDefinitions, useStorePermissions } from '@/features/stores/hooks/useStorePermissions'
 import {
   useAssignedAccounts,
@@ -49,7 +48,6 @@ export function StoreFormPage() {
   const [storeLoading, setStoreLoading] = useState(!isNew)
   const [storeError, setStoreError] = useState<string | null>(null)
 
-  const { data: brands } = useBrands()
   const { data: definitions } = usePermissionDefinitions()
   const { data: grants, refetch: refetchGrants } = useStorePermissions(id ?? null)
   const { data: assignments, refetch: refetchAssignments } = useAssignedAccounts(id ?? null)
@@ -122,7 +120,6 @@ export function StoreFormPage() {
 
       <StoreForm
         initialValues={store ? toFormValues(store) : emptyFormValues}
-        brands={brands ?? []}
         onSubmit={handleSubmit}
         submitLabel={isNew ? 'Create Store' : 'Save changes'}
         readOnly={readOnly}

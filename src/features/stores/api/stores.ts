@@ -63,9 +63,3 @@ export async function setStoreActive(id: string, isActive: boolean) {
   const { error } = await supabase.from('stores').update({ is_active: isActive }).eq('id', id)
   if (error) throw error
 }
-
-export async function listBrands() {
-  const { data, error } = await supabase.from('brands').select('*').eq('is_active', true).order('name')
-  if (error) throw error
-  return data ?? []
-}
