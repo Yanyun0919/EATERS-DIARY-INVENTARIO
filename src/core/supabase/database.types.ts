@@ -1,6 +1,6 @@
-// Hand-written to match supabase/migrations/001-013 (see supabase/migrations/). Only covers
-// tables the Products, Suppliers, Stores, and Categories (Master Data) features depend on
-// today; extend as other features land rather than typing the whole schema up front.
+// Hand-written to match supabase/migrations/001-014 (see supabase/migrations/). Only covers
+// tables the Products, Suppliers, Stores, Categories, and Inventory features depend on today;
+// extend as other features land rather than typing the whole schema up front.
 //
 // Postgres `numeric` columns are serialized as strings by PostgREST on read (to avoid float
 // precision loss), so Row types use `string` for them while Insert/Update accept `number`.
@@ -15,6 +15,7 @@ export type StaffRole = 'administrator' | 'purchasing' | 'retail_store' | 'produ
 export type UnitType = 'weight' | 'volume' | 'count'
 export type PurchaseUnitType = 'kg' | 'g' | 'L' | 'ml' | 'other'
 export type StoreType = 'production_center' | 'retail_store'
+export type StockCountStatus = 'in_progress' | 'completed' | 'cancelled'
 
 export interface Database {
   public: {
@@ -232,8 +233,74 @@ export interface Database {
         Update: Partial<Database['public']['Tables']['store_permissions']['Insert']>
         Relationships: []
       }
+      inventory: {
+        Row: {
+          id: string
+          store_id: string
+          product_id: string
+          quantity_on_hand: string
+          last_counted_at: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: Partial<Omit<Database['public']['Tables']['inventory']['Row'], 'quantity_on_hand'>> & {
+          store_id: string
+          product_id: string
+          quantity_on_hand?: number
+        }
+        Update: Partial<Omit<Database['public']['Tables']['inventory']['Row'], 'quantity_on_hand'>> & {
+          quantity_on_hand?: number
+        }
+        Relationships: []
+      }
+      stock_counts: {
+        Row: {
+          id: string
+          store_id: string
+          status: StockCountStatus
+          counted_by: string | null
+          started_at: string
+          completed_at: string | null
+          notes: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: Partial<Database['public']['Tables']['stock_counts']['Row']> & { store_id: string }
+        Update: Partial<Database['public']['Tables']['stock_counts']['Row']>
+        Relationships: []
+      }
+      stock_count_items: {
+        Row: {
+          id: string
+          stock_count_id: string
+          product_id: string
+          expected_quantity: string
+          counted_quantity: string
+          variance: string
+          notes: string | null
+          created_at: string
+        }
+        Insert: Partial<
+          Omit<Database['public']['Tables']['stock_count_items']['Row'], 'expected_quantity' | 'counted_quantity' | 'variance'>
+        > & {
+          stock_count_id: string
+          product_id: string
+          counted_quantity: number
+        }
+        Update: Partial<
+          Omit<Database['public']['Tables']['stock_count_items']['Row'], 'expected_quantity' | 'counted_quantity' | 'variance'>
+        > & {
+          counted_quantity?: number
+        }
+        Relationships: []
+      }
     }
     Views: Record<string, never>
-    Functions: Record<string, never>
+    Functions: {
+      complete_stock_count: {
+        Args: { target_count_id: string }
+        Returns: void
+      }
+    }
   }
 }

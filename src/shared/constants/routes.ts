@@ -13,7 +13,9 @@ export const ROUTES = {
   CATEGORIES: '/categories',
   CATEGORY_NEW: '/categories/new',
   CATEGORY_EDIT: '/categories/:id/edit',
-  STOCK_COUNT: '/stock-count',
+  INVENTORY: '/inventory',
+  STOCK_COUNTS: '/inventory/counts',
+  STOCK_COUNT_DETAIL: '/inventory/counts/:id',
   PURCHASE_CALCULATION: '/purchase-calculation',
   STORE_TRANSFERS: '/store-transfers',
   PURCHASE_STATISTICS: '/purchase-statistics',
@@ -33,4 +35,8 @@ export function storeEditRoute(id: string) {
 
 export function categoryEditRoute(id: string) {
   return `/categories/${id}/edit`
+}
+
+export function stockCountDetailRoute(id: string) {
+  return `/inventory/counts/${id}`
 }

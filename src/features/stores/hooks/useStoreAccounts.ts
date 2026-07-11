@@ -4,6 +4,7 @@ import {
   listUnassignedAccounts,
   listAllStoreAccountAssignments,
   listAllStaffProfiles,
+  getMyStore,
 } from '@/features/stores/api/storeAccounts'
 
 export function useAssignedAccounts(storeId: string | null) {
@@ -20,4 +21,8 @@ export function useAllStoreAccountAssignments() {
 
 export function useAllStaffProfiles() {
   return useAsync(() => listAllStaffProfiles(), [])
+}
+
+export function useMyStore(staffProfileId: string | null) {
+  return useAsync(() => (staffProfileId ? getMyStore(staffProfileId) : Promise.resolve(null)), [staffProfileId])
 }

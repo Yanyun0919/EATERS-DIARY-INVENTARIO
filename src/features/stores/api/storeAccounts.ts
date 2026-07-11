@@ -60,3 +60,21 @@ export async function listAllStaffProfiles() {
   if (error) throw error
   return data ?? []
 }
+
+// The store a non-administrator account is assigned to (at most one, per the one-account-one-
+// store rule) — used by operational modules like Inventory to skip a store picker entirely for
+// staff who only ever have one store to work with.
+export async function getMyStore(staffProfileId: string) {
+  const { data: assignment, error: assignmentError } = await supabase
+    .from('staff_stores')
+    .select('store_id')
+    .eq('staff_profile_id', staffProfileId)
+    .limit(1)
+    .maybeSingle()
+  if (assignmentError) throw assignmentError
+  if (!assignment) return null
+
+  const { data: store, error } = await supabase.from('stores').select('*').eq('id', assignment.store_id).single()
+  if (error) throw error
+  return store
+}

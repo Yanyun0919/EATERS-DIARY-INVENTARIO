@@ -9,6 +9,8 @@ import { cn } from '@/shared/utils/cn'
 const navItems = [
   { label: 'Products', to: ROUTES.PRODUCTS },
   { label: 'Suppliers', to: ROUTES.SUPPLIERS },
+  { label: 'Inventario', to: ROUTES.INVENTORY },
+  { label: 'Conteos de Stock', to: ROUTES.STOCK_COUNTS },
 ]
 
 const adminOnlyNavItems = [
