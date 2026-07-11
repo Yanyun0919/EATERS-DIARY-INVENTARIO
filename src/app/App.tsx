@@ -8,6 +8,7 @@ import { SupplierListPage, SupplierFormPage } from '@/features/suppliers'
 import { StoreListPage, StoreFormPage } from '@/features/stores'
 import { CategoryListPage, CategoryFormPage } from '@/features/categories'
 import { CurrentInventoryPage, StockCountListPage, StockCountDetailPage } from '@/features/inventory'
+import { PurchaseSuggestionsPage } from '@/features/purchase-suggestions'
 import { ROUTES } from '@/shared/constants/routes'
 
 function App() {
@@ -42,6 +43,7 @@ function App() {
               <Route path={ROUTES.INVENTORY} element={<CurrentInventoryPage />} />
               <Route path={ROUTES.STOCK_COUNTS} element={<StockCountListPage />} />
               <Route path={ROUTES.STOCK_COUNT_DETAIL} element={<StockCountDetailPage />} />
+              <Route path={ROUTES.PURCHASE_SUGGESTIONS} element={<PurchaseSuggestionsPage />} />
             </Route>
           </Route>
         </Routes>

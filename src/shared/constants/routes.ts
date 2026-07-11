@@ -16,7 +16,7 @@ export const ROUTES = {
   INVENTORY: '/inventory',
   STOCK_COUNTS: '/inventory/counts',
   STOCK_COUNT_DETAIL: '/inventory/counts/:id',
-  PURCHASE_CALCULATION: '/purchase-calculation',
+  PURCHASE_SUGGESTIONS: '/purchase-suggestions',
   STORE_TRANSFERS: '/store-transfers',
   PURCHASE_STATISTICS: '/purchase-statistics',
 } as const
