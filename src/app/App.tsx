@@ -2,13 +2,14 @@ import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 import { AuthProvider } from '@/core/auth/AuthProvider'
 import { ProtectedRoute } from '@/core/auth/ProtectedRoute'
 import { AppLayout } from '@/app/AppLayout'
-import { LoginPage } from '@/features/auth'
+import { LoginPage, SetPasswordPage } from '@/features/auth'
 import { ProductListPage, ProductFormPage } from '@/features/products'
 import { SupplierListPage, SupplierFormPage } from '@/features/suppliers'
 import { StoreListPage, StoreFormPage } from '@/features/stores'
 import { CategoryListPage, CategoryFormPage } from '@/features/categories'
 import { CurrentInventoryPage, StockCountListPage, StockCountDetailPage } from '@/features/inventory'
 import { PurchaseSuggestionsPage } from '@/features/purchase-suggestions'
+import { StaffListPage, StaffFormPage } from '@/features/staff'
 import { ROUTES } from '@/shared/constants/routes'
 
 function App() {
@@ -21,6 +22,15 @@ function App() {
             element={
               <div className="flex min-h-svh items-center justify-center p-4">
                 <LoginPage />
+              </div>
+            }
+          />
+
+          <Route
+            path={ROUTES.SET_PASSWORD}
+            element={
+              <div className="flex min-h-svh items-center justify-center p-4">
+                <SetPasswordPage />
               </div>
             }
           />
@@ -44,6 +54,9 @@ function App() {
               <Route path={ROUTES.STOCK_COUNTS} element={<StockCountListPage />} />
               <Route path={ROUTES.STOCK_COUNT_DETAIL} element={<StockCountDetailPage />} />
               <Route path={ROUTES.PURCHASE_SUGGESTIONS} element={<PurchaseSuggestionsPage />} />
+              <Route path={ROUTES.STAFF} element={<StaffListPage />} />
+              <Route path={ROUTES.STAFF_NEW} element={<StaffFormPage />} />
+              <Route path={ROUTES.STAFF_EDIT} element={<StaffFormPage />} />
             </Route>
           </Route>
         </Routes>

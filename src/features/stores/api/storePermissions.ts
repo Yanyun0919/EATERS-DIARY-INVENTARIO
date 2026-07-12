@@ -16,34 +16,16 @@ export async function listStorePermissions(storeId: string) {
   return data ?? []
 }
 
-// Replaces a store's full set of granted permission keys with exactly `permissionKeys` —
-// diffs against what's currently granted and only inserts/deletes what changed, since
-// store_permissions has no UPDATE policy (a permission is granted or revoked, not edited).
-export async function syncStorePermissions(storeId: string, permissionKeys: string[]) {
-  const current = await listStorePermissions(storeId)
-  const currentKeys = new Set(current.map((row) => row.permission_key))
-  const nextKeys = new Set(permissionKeys)
-
-  const toRemove = current.filter((row) => !nextKeys.has(row.permission_key))
-  const toAdd = permissionKeys.filter((key) => !currentKeys.has(key))
-
-  if (toRemove.length > 0) {
-    const { error } = await supabase
-      .from('store_permissions')
-      .delete()
-      .in(
-        'id',
-        toRemove.map((row) => row.id),
-      )
-    if (error) throw error
-  }
-
-  if (toAdd.length > 0) {
-    const { error } = await supabase
-      .from('store_permissions')
-      .insert(toAdd.map((permissionKey) => ({ store_id: storeId, permission_key: permissionKey })))
-    if (error) throw error
-  }
+// store_permissions rows themselves are only ever written by the sync_store_permissions_from_roles
+// trigger (migration 019), driven by store_roles changes -- the one manual write left is toggling
+// Operational Status. INSERT/DELETE grants were revoked from `authenticated` in that migration.
+export async function updatePermissionEnabled(storeId: string, permissionKey: string, isEnabled: boolean) {
+  const { error } = await supabase
+    .from('store_permissions')
+    .update({ is_enabled: isEnabled })
+    .eq('store_id', storeId)
+    .eq('permission_key', permissionKey)
+  if (error) throw error
 }
 
 // For the store list's "Operational Capabilities" column — one query for every store rather

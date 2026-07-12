@@ -1,5 +1,4 @@
 import { supabase } from '@/core/supabase/client'
-import type { StoreType } from '@/core/supabase/database.types'
 
 export interface StoreFilters {
   search?: string
@@ -10,7 +9,6 @@ export interface StoreInput {
   brandId: string
   name: string
   code: string
-  type: StoreType
   address: string | null
   isActive: boolean
 }
@@ -41,7 +39,6 @@ function toStorePayload(input: StoreInput) {
     brand_id: input.brandId,
     name: input.name,
     code: input.code,
-    type: input.type,
     address: input.address,
     is_active: input.isActive,
   }

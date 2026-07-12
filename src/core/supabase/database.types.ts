@@ -1,6 +1,6 @@
-// Hand-written to match supabase/migrations/001-014 (see supabase/migrations/). Only covers
-// tables the Products, Suppliers, Stores, Categories, and Inventory features depend on today;
-// extend as other features land rather than typing the whole schema up front.
+// Hand-written to match supabase/migrations/001-022 (see supabase/migrations/). Only covers
+// tables the Products, Suppliers, Stores, Categories, Inventory, Purchasing, and Staff features
+// depend on today; extend as other features land rather than typing the whole schema up front.
 //
 // Postgres `numeric` columns are serialized as strings by PostgREST on read (to avoid float
 // precision loss), so Row types use `string` for them while Insert/Update accept `number`.
@@ -10,11 +10,12 @@
 // `GenericSchema` (see @supabase/postgrest-js/src/types/common/common.ts). Omitting them
 // silently falls back to `never` for every Row/Insert/Update type instead of erroring loudly.
 
-// Final V1 RBAC role model (migration 011) — replaced the earlier admin/manager/staff model.
-export type StaffRole = 'administrator' | 'purchasing' | 'retail_store' | 'production_center'
+// Staff Management RBAC role model (migration 022) — System Role only, no store-type meaning
+// (that's Store Role, store_role_definitions/store_roles, migration 019). Replaced the earlier
+// administrator/purchasing/retail_store/production_center model from migration 011.
+export type StaffRole = 'administrator' | 'manager' | 'purchasing' | 'staff'
 export type UnitType = 'weight' | 'volume' | 'count'
 export type PurchaseUnitType = 'kg' | 'g' | 'L' | 'ml' | 'other'
-export type StoreType = 'production_center' | 'retail_store'
 export type StockCountStatus = 'in_progress' | 'completed' | 'cancelled'
 
 export interface Database {
@@ -25,6 +26,7 @@ export interface Database {
           id: string
           user_id: string
           full_name: string
+          email: string
           role: StaffRole
           is_active: boolean
           created_at: string
@@ -33,8 +35,43 @@ export interface Database {
         Insert: Partial<Database['public']['Tables']['staff_profiles']['Row']> & {
           user_id: string
           full_name: string
+          email: string
         }
         Update: Partial<Database['public']['Tables']['staff_profiles']['Row']>
+        Relationships: []
+      }
+      staff_permission_definitions: {
+        Row: {
+          key: string
+          name: string
+          description: string | null
+          permission_group: string
+          sort_order: number
+          is_active: boolean
+          created_at: string
+        }
+        Insert: Partial<Database['public']['Tables']['staff_permission_definitions']['Row']> & {
+          key: string
+          name: string
+          permission_group: string
+        }
+        Update: Partial<Database['public']['Tables']['staff_permission_definitions']['Row']>
+        Relationships: []
+      }
+      staff_permissions: {
+        Row: {
+          id: string
+          staff_profile_id: string
+          permission_key: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          staff_profile_id: string
+          permission_key: string
+          created_at?: string
+        }
+        Update: Partial<Database['public']['Tables']['staff_permissions']['Insert']>
         Relationships: []
       }
       categories: {
@@ -165,7 +202,6 @@ export interface Database {
           name: string
           code: string
           address: string | null
-          type: StoreType
           is_active: boolean
           created_at: string
           updated_at: string
@@ -174,9 +210,38 @@ export interface Database {
           brand_id: string
           name: string
           code: string
-          type: StoreType
         }
         Update: Partial<Database['public']['Tables']['stores']['Row']>
+        Relationships: []
+      }
+      store_role_definitions: {
+        Row: {
+          key: string
+          name: string
+          description: string | null
+          sort_order: number
+          is_active: boolean
+          created_at: string
+        }
+        Insert: Partial<Database['public']['Tables']['store_role_definitions']['Row']> & {
+          key: string
+          name: string
+        }
+        Update: Partial<Database['public']['Tables']['store_role_definitions']['Row']>
+        Relationships: []
+      }
+      store_roles: {
+        Row: {
+          id: string
+          store_id: string
+          role_key: string
+          created_at: string
+        }
+        Insert: Partial<Database['public']['Tables']['store_roles']['Row']> & {
+          store_id: string
+          role_key: string
+        }
+        Update: Partial<Database['public']['Tables']['store_roles']['Row']>
         Relationships: []
       }
       staff_stores: {
@@ -221,6 +286,7 @@ export interface Database {
           store_id: string
           permission_key: string
           granted_by: string | null
+          is_enabled: boolean
           created_at: string
         }
         Insert: {
@@ -228,6 +294,7 @@ export interface Database {
           store_id: string
           permission_key: string
           granted_by?: string | null
+          is_enabled?: boolean
           created_at?: string
         }
         Update: Partial<Database['public']['Tables']['store_permissions']['Insert']>
@@ -294,12 +361,87 @@ export interface Database {
         }
         Relationships: []
       }
+      purchase_orders: {
+        Row: {
+          id: string
+          store_id: string
+          supplier_id: string
+          supplier_name: string
+          order_date: string
+          created_by: string | null
+          notes: string | null
+          created_at: string
+        }
+        Insert: Partial<Database['public']['Tables']['purchase_orders']['Row']> & {
+          store_id: string
+          supplier_id: string
+          supplier_name: string
+        }
+        Update: Partial<Database['public']['Tables']['purchase_orders']['Row']>
+        Relationships: []
+      }
+      purchase_order_items: {
+        Row: {
+          id: string
+          purchase_order_id: string
+          product_id: string
+          product_name: string
+          supplier_product_id: string | null
+          quantity_ordered: string
+          unit_price: string
+          iva_rate: string
+          purchase_unit: PurchaseUnitType
+          purchase_unit_spec: string | null
+          line_total: string
+          created_at: string
+        }
+        Insert: Partial<
+          Omit<
+            Database['public']['Tables']['purchase_order_items']['Row'],
+            'quantity_ordered' | 'unit_price' | 'iva_rate' | 'line_total'
+          >
+        > & {
+          purchase_order_id: string
+          product_id: string
+          product_name: string
+          quantity_ordered: number
+          unit_price: number
+          purchase_unit: PurchaseUnitType
+          iva_rate?: number
+        }
+        Update: Partial<
+          Omit<
+            Database['public']['Tables']['purchase_order_items']['Row'],
+            'quantity_ordered' | 'unit_price' | 'iva_rate' | 'line_total'
+          >
+        > & {
+          quantity_ordered?: number
+          unit_price?: number
+          iva_rate?: number
+        }
+        Relationships: []
+      }
     }
     Views: Record<string, never>
     Functions: {
       complete_stock_count: {
         Args: { target_count_id: string }
         Returns: void
+      }
+      create_purchase_order: {
+        Args: {
+          target_store_id: string
+          target_supplier_id: string
+          target_notes: string | null
+          target_items: {
+            product_id: string
+            supplier_product_id: string
+            quantity_ordered: number
+            unit_price: number
+            iva_rate: number
+          }[]
+        }
+        Returns: string
       }
     }
   }

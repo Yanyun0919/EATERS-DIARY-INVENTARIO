@@ -43,7 +43,7 @@ export function StoreForm({ initialValues, onSubmit, submitLabel, readOnly }: St
     try {
       await onSubmit(result.data)
     } catch (err) {
-      setFormError(err instanceof Error ? err.message : 'Something went wrong')
+      setFormError(err instanceof Error ? err.message : 'Algo salió mal')
     } finally {
       setSubmitting(false)
     }
@@ -60,7 +60,7 @@ export function StoreForm({ initialValues, onSubmit, submitLabel, readOnly }: St
       <form onSubmit={handleSubmit} className="max-w-lg space-y-4">
         <div className="space-y-1">
           <label htmlFor="name" className="text-sm font-medium">
-            Store Name
+            Nombre
           </label>
           <input
             id="name"
@@ -74,7 +74,7 @@ export function StoreForm({ initialValues, onSubmit, submitLabel, readOnly }: St
 
         <div className="space-y-1">
           <label htmlFor="code" className="text-sm font-medium">
-            Store Code
+            Código
           </label>
           <input
             id="code"
@@ -84,23 +84,6 @@ export function StoreForm({ initialValues, onSubmit, submitLabel, readOnly }: St
             className={inputClasses}
           />
           {errors.code && <p className="text-sm text-red-600">{errors.code}</p>}
-        </div>
-
-        <div className="space-y-1">
-          <label htmlFor="type" className="text-sm font-medium">
-            Store Type
-          </label>
-          <select
-            id="type"
-            value={values.type}
-            onChange={(event) => setValues({ ...values, type: event.target.value as StoreFormValues['type'] })}
-            disabled={readOnly}
-            className={inputClasses}
-          >
-            <option value="retail_store">Retail Store</option>
-            <option value="production_center">Production Center</option>
-          </select>
-          {errors.type && <p className="text-sm text-red-600">{errors.type}</p>}
         </div>
 
         <div className="space-y-1">
@@ -137,7 +120,7 @@ export function StoreForm({ initialValues, onSubmit, submitLabel, readOnly }: St
 
         <div className="space-y-1">
           <label htmlFor="address" className="text-sm font-medium">
-            Address (optional)
+            Dirección (opcional)
           </label>
           <input
             id="address"
@@ -155,14 +138,14 @@ export function StoreForm({ initialValues, onSubmit, submitLabel, readOnly }: St
             onChange={(event) => setValues({ ...values, isActive: event.target.checked })}
             disabled={readOnly}
           />
-          Active
+          Activo
         </label>
 
         {formError && <p className="text-sm text-red-600">{formError}</p>}
 
         {!readOnly && (
           <Button type="submit" disabled={submitting}>
-            {submitting ? 'Saving…' : submitLabel}
+            {submitting ? 'Guardando…' : submitLabel}
           </Button>
         )}
       </form>

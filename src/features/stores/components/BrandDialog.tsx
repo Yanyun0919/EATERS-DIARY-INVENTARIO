@@ -13,6 +13,19 @@ interface BrandDialogProps {
 const inputClasses =
   'w-full rounded-md border border-border bg-transparent px-3 py-2 text-sm outline-none focus:border-accent'
 
+// Supabase's PostgrestError is a plain object with a `.message` in some code paths and not a
+// true `Error` instance in others depending on how the client surfaces it -- checking for
+// `.message` directly (rather than relying on `instanceof Error`) is what actually gets the raw
+// database error text out reliably.
+function extractErrorMessage(err: unknown): string {
+  if (err && typeof err === 'object' && 'message' in err) {
+    const message = (err as { message?: unknown }).message
+    if (typeof message === 'string' && message) return message
+  }
+  if (err instanceof Error) return err.message
+  return String(err)
+}
+
 // Reached only from the Store form's Brand selector -- Brand has no standalone page. Name only,
 // always active; no code/NIF/description/order, matching the minimal Brand model.
 export function BrandDialog({ onClose, onCreated }: BrandDialogProps) {
@@ -33,7 +46,10 @@ export function BrandDialog({ onClose, onCreated }: BrandDialogProps) {
       const created = await createBrand({ name: trimmed, isActive: true })
       onCreated(created)
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'No se pudo crear la marca')
+      // eslint-disable-next-line no-console
+      console.error('createBrand failed:', err)
+      const detail = extractErrorMessage(err)
+      setError(import.meta.env.DEV ? `No se pudo crear la marca: ${detail}` : 'No se pudo crear la marca')
     } finally {
       setSubmitting(false)
     }

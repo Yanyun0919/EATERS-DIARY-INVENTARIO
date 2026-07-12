@@ -1,5 +1,6 @@
 export const ROUTES = {
   LOGIN: '/login',
+  SET_PASSWORD: '/set-password',
   HOME: '/',
   PRODUCTS: '/products',
   PRODUCT_NEW: '/products/new',
@@ -17,8 +18,13 @@ export const ROUTES = {
   STOCK_COUNTS: '/inventory/counts',
   STOCK_COUNT_DETAIL: '/inventory/counts/:id',
   PURCHASE_SUGGESTIONS: '/purchase-suggestions',
+  PURCHASES: '/purchases',
+  PURCHASE_NEW: '/purchases/new',
   STORE_TRANSFERS: '/store-transfers',
   PURCHASE_STATISTICS: '/purchase-statistics',
+  STAFF: '/staff',
+  STAFF_NEW: '/staff/new',
+  STAFF_EDIT: '/staff/:id/edit',
 } as const
 
 export function productEditRoute(id: string) {
@@ -39,4 +45,8 @@ export function categoryEditRoute(id: string) {
 
 export function stockCountDetailRoute(id: string) {
   return `/inventory/counts/${id}`
+}
+
+export function staffEditRoute(id: string) {
+  return `/staff/${id}/edit`
 }

@@ -15,12 +15,16 @@ const navItems = [
 
 const adminOnlyNavItems = [
   { label: 'Categories', to: ROUTES.CATEGORIES },
-  { label: 'Stores', to: ROUTES.STORES },
+  { label: 'Locales', to: ROUTES.STORES },
+  { label: 'Personal', to: ROUTES.STAFF },
 ]
 
 // Purchase Suggestions is a role-based (not store-based) capability, per the approved business
 // design -- visible to Administrator and Purchasing, not to Retail Store/Production Center.
-const purchasingNavItems = [{ label: 'Sugerencias de Compra', to: ROUTES.PURCHASE_SUGGESTIONS }]
+const purchasingNavItems = [
+  { label: 'Sugerencias de Compra', to: ROUTES.PURCHASE_SUGGESTIONS },
+  { label: 'Compras', to: ROUTES.PURCHASES },
+]
 
 export function AppLayout() {
   const { user, signOut } = useAuth()

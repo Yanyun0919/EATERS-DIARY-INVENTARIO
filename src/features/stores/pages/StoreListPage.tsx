@@ -7,6 +7,7 @@ import { useDebouncedValue } from '@/shared/hooks/useDebouncedValue'
 import { useStores } from '@/features/stores/hooks/useStores'
 import { useAllStoreAccountAssignments, useAllStaffProfiles } from '@/features/stores/hooks/useStoreAccounts'
 import { useAllStorePermissionGrants, usePermissionDefinitions } from '@/features/stores/hooks/useStorePermissions'
+import { useAllStoreRoles, useStoreRoleDefinitions } from '@/features/stores/hooks/useStoreRoles'
 import { setStoreActive } from '@/features/stores/api/stores'
 import { StoreFilters, type ActiveFilter } from '@/features/stores/components/StoreFilters'
 import { StoreTable } from '@/features/stores/components/StoreTable'
@@ -36,6 +37,8 @@ export function StoreListPage() {
   const { data: profiles } = useAllStaffProfiles()
   const { data: grants } = useAllStorePermissionGrants()
   const { data: definitions } = usePermissionDefinitions()
+  const { data: allRoles } = useAllStoreRoles()
+  const { data: roleDefinitions } = useStoreRoleDefinitions()
 
   const profileNameById = new Map((profiles ?? []).map((profile) => [profile.id, profile.full_name]))
   const accountNamesByStore = new Map<string, string[]>()
@@ -57,6 +60,20 @@ export function StoreListPage() {
     capabilityNamesByStore.set(grant.store_id, list)
   }
 
+  // Built by iterating role definitions (already sorted by sort_order) rather than the raw
+  // store_roles rows, so each store's role list always renders in sort_order.
+  const roleKeysByStore = new Map<string, Set<string>>()
+  for (const role of allRoles ?? []) {
+    const set = roleKeysByStore.get(role.store_id) ?? new Set<string>()
+    set.add(role.role_key)
+    roleKeysByStore.set(role.store_id, set)
+  }
+  const roleNamesByStore = new Map<string, string[]>()
+  for (const [storeId, roleKeys] of roleKeysByStore) {
+    const names = (roleDefinitions ?? []).filter((definition) => roleKeys.has(definition.key)).map((definition) => definition.name)
+    roleNamesByStore.set(storeId, names)
+  }
+
   async function handleToggleActive(store: Store) {
     setTogglingId(store.id)
     try {
@@ -70,10 +87,10 @@ export function StoreListPage() {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h1 className="text-lg font-semibold">Stores</h1>
+        <h1 className="text-lg font-semibold">Locales</h1>
         {canWriteMasterData && (
           <Link to={ROUTES.STORE_NEW}>
-            <Button>Add Store</Button>
+            <Button>Nuevo Local</Button>
           </Link>
         )}
       </div>
@@ -85,7 +102,7 @@ export function StoreListPage() {
         onActiveFilterChange={setActiveFilter}
       />
 
-      {loading && <p className="text-sm text-neutral-500">Loading…</p>}
+      {loading && <p className="text-sm text-neutral-500">Cargando…</p>}
       {error && <p className="text-sm text-red-600">{error.message}</p>}
 
       {!loading && !error && (
@@ -96,6 +113,7 @@ export function StoreListPage() {
           togglingId={togglingId}
           accountNamesByStore={accountNamesByStore}
           capabilityNamesByStore={capabilityNamesByStore}
+          roleNamesByStore={roleNamesByStore}
         />
       )}
     </div>

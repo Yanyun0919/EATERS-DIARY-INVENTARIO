@@ -1,7 +1,7 @@
 import { useAsync } from '@/shared/hooks/useAsync'
 import {
   listAssignedAccounts,
-  listUnassignedAccounts,
+  listAssignableAccounts,
   listAllStoreAccountAssignments,
   listAllStaffProfiles,
   getMyStore,
@@ -11,8 +11,8 @@ export function useAssignedAccounts(storeId: string | null) {
   return useAsync(() => (storeId ? listAssignedAccounts(storeId) : Promise.resolve([])), [storeId])
 }
 
-export function useUnassignedAccounts() {
-  return useAsync(() => listUnassignedAccounts(), [])
+export function useAssignableAccounts(storeId: string | null) {
+  return useAsync(() => (storeId ? listAssignableAccounts(storeId) : Promise.resolve([])), [storeId])
 }
 
 export function useAllStoreAccountAssignments() {

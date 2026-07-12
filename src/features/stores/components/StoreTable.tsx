@@ -6,11 +6,6 @@ import { cn } from '@/shared/utils/cn'
 
 type Store = Database['public']['Tables']['stores']['Row']
 
-const storeTypeLabels: Record<Store['type'], string> = {
-  production_center: 'Production Center',
-  retail_store: 'Retail Store',
-}
-
 interface StoreTableProps {
   stores: Store[]
   canWrite: boolean
@@ -18,6 +13,7 @@ interface StoreTableProps {
   togglingId: string | null
   accountNamesByStore: Map<string, string[]>
   capabilityNamesByStore: Map<string, string[]>
+  roleNamesByStore: Map<string, string[]>
 }
 
 export function StoreTable({
@@ -27,9 +23,10 @@ export function StoreTable({
   togglingId,
   accountNamesByStore,
   capabilityNamesByStore,
+  roleNamesByStore,
 }: StoreTableProps) {
   if (stores.length === 0) {
-    return <p className="py-8 text-center text-sm text-neutral-500">No stores found.</p>
+    return <p className="py-8 text-center text-sm text-neutral-500">No se encontraron locales.</p>
   }
 
   return (
@@ -37,12 +34,12 @@ export function StoreTable({
       <table className="w-full text-left text-sm">
         <thead>
           <tr className="border-b border-border bg-black/[0.02]">
-            <th className="px-3 py-2 font-medium">Name</th>
-            <th className="px-3 py-2 font-medium">Code</th>
-            <th className="px-3 py-2 font-medium">Type</th>
-            <th className="px-3 py-2 font-medium">Status</th>
-            <th className="px-3 py-2 font-medium">Login Account(s)</th>
-            <th className="px-3 py-2 font-medium">Capabilities</th>
+            <th className="px-3 py-2 font-medium">Nombre</th>
+            <th className="px-3 py-2 font-medium">Código</th>
+            <th className="px-3 py-2 font-medium">Roles</th>
+            <th className="px-3 py-2 font-medium">Estado</th>
+            <th className="px-3 py-2 font-medium">Cuentas de Acceso</th>
+            <th className="px-3 py-2 font-medium">Capacidades</th>
             <th className="px-3 py-2 font-medium" />
           </tr>
         </thead>
@@ -50,11 +47,27 @@ export function StoreTable({
           {stores.map((store) => {
             const accountNames = accountNamesByStore.get(store.id) ?? []
             const capabilityNames = capabilityNamesByStore.get(store.id) ?? []
+            const roleNames = roleNamesByStore.get(store.id) ?? []
             return (
               <tr key={store.id} className="border-b border-border last:border-0">
                 <td className="px-3 py-2">{store.name}</td>
                 <td className="px-3 py-2 text-neutral-500">{store.code}</td>
-                <td className="px-3 py-2 text-neutral-500">{storeTypeLabels[store.type]}</td>
+                <td className="px-3 py-2">
+                  <div className="flex flex-wrap gap-1">
+                    {roleNames.length > 0 ? (
+                      roleNames.map((name) => (
+                        <span
+                          key={name}
+                          className="rounded-full bg-black/[0.05] px-2 py-0.5 text-xs font-medium text-neutral-700"
+                        >
+                          {name}
+                        </span>
+                      ))
+                    ) : (
+                      <span className="text-neutral-500">—</span>
+                    )}
+                  </div>
+                </td>
                 <td className="px-3 py-2">
                   <span
                     className={cn(
@@ -62,7 +75,7 @@ export function StoreTable({
                       store.is_active ? 'bg-green-100 text-green-800' : 'bg-neutral-200 text-neutral-600',
                     )}
                   >
-                    {store.is_active ? 'Active' : 'Inactive'}
+                    {store.is_active ? 'Activo' : 'Inactivo'}
                   </span>
                 </td>
                 <td className="px-3 py-2 text-neutral-500">
@@ -74,7 +87,7 @@ export function StoreTable({
                 <td className="px-3 py-2 text-right">
                   <div className="flex justify-end gap-2">
                     <Link to={storeEditRoute(store.id)} className="text-sm text-accent hover:underline">
-                      {canWrite ? 'Edit' : 'View'}
+                      {canWrite ? 'Editar' : 'Ver'}
                     </Link>
                     {canWrite && (
                       <Button
@@ -83,7 +96,7 @@ export function StoreTable({
                         disabled={togglingId === store.id}
                         className="px-2 py-1 text-xs"
                       >
-                        {store.is_active ? 'Disable' : 'Enable'}
+                        {store.is_active ? 'Desactivar' : 'Activar'}
                       </Button>
                     )}
                   </div>

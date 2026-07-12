@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import type { Database } from '@/core/supabase/database.types'
 import { Button } from '@/shared/components/Button'
-import { assignAccountToStore, removeAccountFromStore } from '@/features/stores/api/storeAccounts'
+import { listStaffLocales, setStaffLocales } from '@/features/stores/api/storeAccounts'
 
 type StaffStore = Database['public']['Tables']['staff_stores']['Row']
 type StaffProfile = Pick<Database['public']['Tables']['staff_profiles']['Row'], 'id' | 'full_name' | 'role'>
@@ -10,7 +10,7 @@ interface StoreAccountsEditorProps {
   storeId: string
   assignments: StaffStore[]
   assignedProfiles: StaffProfile[]
-  unassignedProfiles: StaffProfile[]
+  assignableProfiles: StaffProfile[]
   canWrite: boolean
   onChanged: () => void
 }
@@ -19,7 +19,7 @@ export function StoreAccountsEditor({
   storeId,
   assignments,
   assignedProfiles,
-  unassignedProfiles,
+  assignableProfiles,
   canWrite,
   onChanged,
 }: StoreAccountsEditorProps) {
@@ -44,30 +44,35 @@ export function StoreAccountsEditor({
 
   async function handleAssign() {
     if (!selectedProfileId) {
-      setError('Select a login account')
+      setError('Selecciona una cuenta de acceso')
       return
     }
     setSubmitting(true)
     setError(null)
     try {
-      await assignAccountToStore(storeId, selectedProfileId)
+      const currentLocales = await listStaffLocales(selectedProfileId)
+      await setStaffLocales(selectedProfileId, [...currentLocales, storeId])
       cancelAdd()
       onChanged()
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Something went wrong')
+      setError(err instanceof Error ? err.message : 'Algo salió mal')
     } finally {
       setSubmitting(false)
     }
   }
 
-  async function handleRemove(assignmentId: string) {
+  async function handleRemove(staffProfileId: string) {
     setSubmitting(true)
     setError(null)
     try {
-      await removeAccountFromStore(assignmentId)
+      const currentLocales = await listStaffLocales(staffProfileId)
+      await setStaffLocales(
+        staffProfileId,
+        currentLocales.filter((id) => id !== storeId),
+      )
       onChanged()
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Something went wrong')
+      setError(err instanceof Error ? err.message : 'Algo salió mal')
     } finally {
       setSubmitting(false)
     }
@@ -76,16 +81,16 @@ export function StoreAccountsEditor({
   return (
     <div className="space-y-2">
       <div className="flex items-center justify-between">
-        <h2 className="text-sm font-semibold">Login Accounts</h2>
+        <h2 className="text-sm font-semibold">Cuentas de Acceso</h2>
         {canWrite && !adding && (
           <Button variant="secondary" onClick={startAdd} className="px-2 py-1 text-xs">
-            Assign account
+            Asignar Cuenta
           </Button>
         )}
       </div>
 
       {assignments.length === 0 && !adding && (
-        <p className="text-sm text-neutral-500">No login account assigned to this store yet.</p>
+        <p className="text-sm text-neutral-500">Todavía no hay cuentas de acceso asignadas a este local.</p>
       )}
 
       <ul className="space-y-1">
@@ -94,15 +99,15 @@ export function StoreAccountsEditor({
             key={assignment.id}
             className="flex items-center justify-between rounded-md border border-border px-3 py-2 text-sm"
           >
-            <span>{profilesById.get(assignment.staff_profile_id)?.full_name ?? 'Unknown account'}</span>
+            <span>{profilesById.get(assignment.staff_profile_id)?.full_name ?? 'Cuenta desconocida'}</span>
             {canWrite && (
               <button
                 type="button"
-                onClick={() => handleRemove(assignment.id)}
+                onClick={() => handleRemove(assignment.staff_profile_id)}
                 disabled={submitting}
                 className="text-red-600 hover:underline"
               >
-                Remove
+                Quitar
               </button>
             )}
           </li>
@@ -116,18 +121,18 @@ export function StoreAccountsEditor({
             onChange={(event) => setSelectedProfileId(event.target.value)}
             className="rounded-md border border-border bg-transparent px-2 py-1 text-sm outline-none focus:border-accent"
           >
-            <option value="">Select an account…</option>
-            {unassignedProfiles.map((profile) => (
+            <option value="">Selecciona una cuenta…</option>
+            {assignableProfiles.map((profile) => (
               <option key={profile.id} value={profile.id}>
                 {profile.full_name}
               </option>
             ))}
           </select>
           <Button onClick={handleAssign} disabled={submitting} className="px-2 py-1 text-xs">
-            Assign
+            Asignar
           </Button>
           <Button variant="secondary" onClick={cancelAdd} disabled={submitting} className="px-2 py-1 text-xs">
-            Cancel
+            Cancelar
           </Button>
         </div>
       )}
