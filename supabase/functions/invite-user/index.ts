@@ -69,8 +69,11 @@ async function handleRequest(req: Request): Promise<Response> {
     return failure('NOT_ADMINISTRATOR', 'Missing Authorization header.')
   }
 
-  const supabaseUrl = Deno.env.get('SUPABASE_URL')!
-  const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+  const supabaseUrl = Deno.env.get('SUPABASE_URL')
+  const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
+  if (!supabaseUrl || !serviceRoleKey) {
+    return failure('UNKNOWN_ERROR', 'Server misconfiguration: missing environment variables.')
+  }
   const adminClient = createClient(supabaseUrl, serviceRoleKey)
 
   // Resolve the caller from their own session JWT -- this is the only thing that tells us who is

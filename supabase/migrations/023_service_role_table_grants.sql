@@ -1,0 +1,27 @@
+-- Restores service_role's baseline table privileges on this project's existing public tables.
+-- Full investigation and evidence: docs/architecture/service-role-privileges.md
+--
+-- PURPOSE: fixes a PostgreSQL 42501 "permission denied for table staff_profiles" error hit by
+-- the invite-user Edge Function's caller-verification query.
+--
+-- EVIDENCE: a read-only privilege audit (has_table_privilege('service_role', ...)) confirmed
+-- service_role returns false for SELECT/INSERT/UPDATE/DELETE on every table in public, not just
+-- staff_profiles. This project was found to be missing the documented baseline grants for
+-- service_role.
+--
+-- OFFICIAL DOCUMENTATION: per Supabase's own docs, "By default on existing projects, tables and
+-- functions you create in public are automatically granted SELECT, INSERT, UPDATE, DELETE ... to
+-- anon, authenticated, and service_role" (https://supabase.com/docs/guides/database/postgres/roles).
+-- BYPASSRLS (which service_role has) and table-level GRANT are independent layers -- BYPASSRLS
+-- only skips row-level security, evaluated after the grant check already passed.
+--
+-- SCOPE: exactly the four documented default privilege types, not ALL PRIVILEGES. Existing
+-- public tables only. No schema USAGE grant. No RLS/policy/function/trigger/anon/authenticated
+-- change anywhere in this file.
+--
+-- OUT OF SCOPE: ALTER DEFAULT PRIVILEGES (whether future tables need the same treatment) is a
+-- separate architectural decision, not bundled into this bug fix.
+--
+-- IDEMPOTENT: granting a privilege a role already has is a no-op in PostgreSQL -- safe to re-run.
+
+grant select, insert, update, delete on all tables in schema public to service_role;
