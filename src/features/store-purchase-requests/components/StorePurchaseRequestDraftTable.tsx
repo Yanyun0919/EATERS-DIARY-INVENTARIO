@@ -4,44 +4,55 @@ type Product = Database['public']['Tables']['products']['Row']
 type Category = Database['public']['Tables']['categories']['Row']
 type Unit = Database['public']['Tables']['units']['Row']
 
-export type SuggestionStatus = 'not_counted' | 'low_stock'
+export type DraftRowStatus = 'not_counted' | 'low_stock' | 'manual'
 
-export interface SuggestionRow {
+export interface DraftRow {
   product: Product
-  status: SuggestionStatus
+  status: DraftRowStatus
   currentStock: number | null
   suggestedQuantity: number | null
 }
 
-interface PurchaseSuggestionsTableProps {
-  rows: SuggestionRow[]
+interface StorePurchaseRequestDraftTableProps {
+  rows: DraftRow[]
   categoriesById: Map<string, Category>
   unitsById: Map<string, Unit>
   quantityOverrides: Map<string, string>
   onQuantityChange: (productId: string, value: string) => void
+  removedProductIds: Set<string>
+  onToggleRemoved: (productId: string) => void
+  onRemoveManualRow: (productId: string) => void
 }
 
-const statusLabels: Record<SuggestionStatus, string> = {
+const statusLabels: Record<DraftRowStatus, string> = {
   not_counted: 'Sin Contar',
   low_stock: 'Stock Bajo',
+  manual: 'Añadido',
 }
 
-const statusClasses: Record<SuggestionStatus, string> = {
+const statusClasses: Record<DraftRowStatus, string> = {
   not_counted: 'bg-neutral-200 text-neutral-600',
   low_stock: 'bg-amber-100 text-amber-800',
+  manual: 'bg-blue-100 text-blue-800',
 }
 
-// Cantidad Sugerida = Stock Mínimo - Stock Actual, nothing else, and only for Stock Bajo rows --
-// Sin Contar rows never get a calculated suggestion (their real stock is unknown, not zero).
-// Edits are local UI state only (quantityOverrides, owned by the page) -- never saved; a
-// refresh regenerates everything fresh from Inventory.
-export function PurchaseSuggestionsTable({
+// Evolves PurchaseSuggestionsTable with the three capabilities the Store Manager Review step
+// requires (approved Business Architecture): modify suggested quantity (already existed),
+// remove a suggested item, and manually add additional products. Cantidad Sugerida logic is
+// unchanged -- Stock Mínimo - Stock Actual, only for Stock Bajo rows; Sin Contar rows never get
+// a calculated suggestion (real stock unknown, not zero) and have no quantity input here at
+// all -- requesting an uncounted product is done via the manual-add picker instead, so there's
+// never two different ways to specify a quantity for the same product on this screen.
+export function StorePurchaseRequestDraftTable({
   rows,
   categoriesById,
   unitsById,
   quantityOverrides,
   onQuantityChange,
-}: PurchaseSuggestionsTableProps) {
+  removedProductIds,
+  onToggleRemoved,
+  onRemoveManualRow,
+}: StorePurchaseRequestDraftTableProps) {
   if (rows.length === 0) {
     return (
       <div className="py-8 text-center">
@@ -60,17 +71,19 @@ export function PurchaseSuggestionsTable({
             <th className="px-3 py-2 font-medium">Categoría</th>
             <th className="px-3 py-2 font-medium">Estado</th>
             <th className="px-3 py-2 font-medium">Stock Actual</th>
-            <th className="px-3 py-2 font-medium">Cantidad Sugerida</th>
+            <th className="px-3 py-2 font-medium">Cantidad Solicitada</th>
+            <th className="px-3 py-2 font-medium" />
           </tr>
         </thead>
         <tbody>
           {rows.map(({ product, status, currentStock, suggestedQuantity }) => {
             const category = categoriesById.get(product.category_id)
             const unit = unitsById.get(product.base_unit_id)
+            const isRemoved = status === 'low_stock' && removedProductIds.has(product.id)
             const value = quantityOverrides.get(product.id) ?? (suggestedQuantity !== null ? String(suggestedQuantity) : '')
 
             return (
-              <tr key={product.id} className="border-b border-border last:border-0">
+              <tr key={product.id} className={`border-b border-border last:border-0 ${isRemoved ? 'opacity-50' : ''}`}>
                 <td className="px-3 py-2">{product.name}</td>
                 <td className="px-3 py-2 text-neutral-500">{category?.name ?? '—'}</td>
                 <td className="px-3 py-2">
@@ -82,7 +95,7 @@ export function PurchaseSuggestionsTable({
                   {currentStock !== null ? `${currentStock} ${unit?.abbreviation ?? ''}` : 'Sin Contar'}
                 </td>
                 <td className="px-3 py-2">
-                  {status === 'low_stock' ? (
+                  {status !== 'not_counted' ? (
                     <div className="flex items-center gap-2">
                       <input
                         type="number"
@@ -90,13 +103,34 @@ export function PurchaseSuggestionsTable({
                         step="any"
                         min="0"
                         value={value}
+                        disabled={isRemoved}
                         onChange={(event) => onQuantityChange(product.id, event.target.value)}
-                        className="w-24 rounded-md border border-border bg-transparent px-2 py-1.5 text-right text-sm outline-none focus:border-accent"
+                        className="w-24 rounded-md border border-border bg-transparent px-2 py-1.5 text-right text-sm outline-none focus:border-accent disabled:opacity-50"
                       />
                       <span className="text-xs text-neutral-500">{unit?.abbreviation ?? ''}</span>
                     </div>
                   ) : (
                     <span className="text-neutral-500">—</span>
+                  )}
+                </td>
+                <td className="px-3 py-2 text-right">
+                  {status === 'low_stock' && (
+                    <button
+                      type="button"
+                      onClick={() => onToggleRemoved(product.id)}
+                      className="text-sm text-accent hover:underline"
+                    >
+                      {isRemoved ? 'Deshacer' : 'Quitar'}
+                    </button>
+                  )}
+                  {status === 'manual' && (
+                    <button
+                      type="button"
+                      onClick={() => onRemoveManualRow(product.id)}
+                      className="text-sm text-red-600 hover:underline"
+                    >
+                      Quitar
+                    </button>
                   )}
                 </td>
               </tr>

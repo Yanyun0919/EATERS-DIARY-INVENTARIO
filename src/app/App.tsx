@@ -7,8 +7,14 @@ import { ProductListPage, ProductFormPage } from '@/features/products'
 import { SupplierListPage, SupplierFormPage } from '@/features/suppliers'
 import { StoreListPage, StoreFormPage } from '@/features/stores'
 import { CategoryListPage, CategoryFormPage } from '@/features/categories'
+import { SupplySourceListPage, SupplySourceFormPage } from '@/features/supply-sources'
 import { CurrentInventoryPage, StockCountListPage, StockCountDetailPage } from '@/features/inventory'
-import { PurchaseSuggestionsPage } from '@/features/purchase-suggestions'
+import {
+  StorePurchaseRequestListPage,
+  StorePurchaseRequestNewPage,
+  StorePurchaseRequestDetailPage,
+} from '@/features/store-purchase-requests'
+import { ComprasPage, NuevaCompraPage, PurchaseOrderDetailPage } from '@/features/purchasing'
 import { StaffListPage, StaffFormPage } from '@/features/staff'
 import { ROUTES } from '@/shared/constants/routes'
 
@@ -50,10 +56,18 @@ function App() {
               <Route path={ROUTES.CATEGORIES} element={<CategoryListPage />} />
               <Route path={ROUTES.CATEGORY_NEW} element={<CategoryFormPage />} />
               <Route path={ROUTES.CATEGORY_EDIT} element={<CategoryFormPage />} />
+              <Route path={ROUTES.SUPPLY_SOURCES} element={<SupplySourceListPage />} />
+              <Route path={ROUTES.SUPPLY_SOURCE_NEW} element={<SupplySourceFormPage />} />
+              <Route path={ROUTES.SUPPLY_SOURCE_EDIT} element={<SupplySourceFormPage />} />
               <Route path={ROUTES.INVENTORY} element={<CurrentInventoryPage />} />
               <Route path={ROUTES.STOCK_COUNTS} element={<StockCountListPage />} />
               <Route path={ROUTES.STOCK_COUNT_DETAIL} element={<StockCountDetailPage />} />
-              <Route path={ROUTES.PURCHASE_SUGGESTIONS} element={<PurchaseSuggestionsPage />} />
+              <Route path={ROUTES.STORE_PURCHASE_REQUESTS} element={<StorePurchaseRequestListPage />} />
+              <Route path={ROUTES.STORE_PURCHASE_REQUEST_NEW} element={<StorePurchaseRequestNewPage />} />
+              <Route path={ROUTES.STORE_PURCHASE_REQUEST_DETAIL} element={<StorePurchaseRequestDetailPage />} />
+              <Route path={ROUTES.PURCHASES} element={<ComprasPage />} />
+              <Route path={ROUTES.PURCHASE_NEW} element={<NuevaCompraPage />} />
+              <Route path={ROUTES.PURCHASE_DETAIL} element={<PurchaseOrderDetailPage />} />
               <Route path={ROUTES.STAFF} element={<StaffListPage />} />
               <Route path={ROUTES.STAFF_NEW} element={<StaffFormPage />} />
               <Route path={ROUTES.STAFF_EDIT} element={<StaffFormPage />} />

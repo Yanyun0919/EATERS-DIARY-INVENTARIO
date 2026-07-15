@@ -10,6 +10,9 @@ export interface ProductInput {
   name: string
   categoryId: string
   baseUnitId: string
+  // Required again as of the React UI phase (was temporarily optional during the API-only
+  // phase, since the Product Form didn't yet expose Supply Source selection).
+  supplySourceId: string | null
   minimumStock: number
   isStockTracked: boolean
 }
@@ -45,6 +48,7 @@ export async function createProduct(input: ProductInput) {
       name: input.name,
       category_id: input.categoryId,
       base_unit_id: input.baseUnitId,
+      supply_source_id: input.supplySourceId,
       minimum_stock: input.minimumStock,
       is_stock_tracked: input.isStockTracked,
     })
@@ -61,6 +65,7 @@ export async function updateProduct(id: string, input: ProductInput) {
       name: input.name,
       category_id: input.categoryId,
       base_unit_id: input.baseUnitId,
+      supply_source_id: input.supplySourceId,
       minimum_stock: input.minimumStock,
       is_stock_tracked: input.isStockTracked,
     })
@@ -103,6 +108,30 @@ export async function listAllCategories() {
 
 export async function listUnits() {
   const { data, error } = await supabase.from('units').select('*').order('name')
+  if (error) throw error
+  return data ?? []
+}
+
+// For the product create/edit dropdown — active supply sources only, in Display Order.
+export async function listSupplySources() {
+  const { data, error } = await supabase
+    .from('supply_sources')
+    .select('*')
+    .eq('is_active', true)
+    .order('sort_order', { ascending: true })
+    .order('name')
+  if (error) throw error
+  return data ?? []
+}
+
+// For resolving supply source names on the product list — includes inactive ones so a
+// product's supply source still displays correctly after that source is disabled.
+export async function listAllSupplySources() {
+  const { data, error } = await supabase
+    .from('supply_sources')
+    .select('*')
+    .order('sort_order', { ascending: true })
+    .order('name')
   if (error) throw error
   return data ?? []
 }

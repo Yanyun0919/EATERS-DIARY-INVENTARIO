@@ -17,6 +17,7 @@ export type StaffRole = 'administrator' | 'manager' | 'purchasing' | 'staff'
 export type UnitType = 'weight' | 'volume' | 'count'
 export type PurchaseUnitType = 'kg' | 'g' | 'L' | 'ml' | 'other'
 export type StockCountStatus = 'in_progress' | 'completed' | 'cancelled'
+export type SupplySourceResolutionType = 'external' | 'internal'
 
 export interface Database {
   public: {
@@ -108,6 +109,7 @@ export interface Database {
           name: string
           category_id: string
           base_unit_id: string
+          supply_source_id: string | null
           minimum_stock: string
           is_active: boolean
           is_stock_tracked: boolean
@@ -123,6 +125,37 @@ export interface Database {
         Update: Partial<Omit<Database['public']['Tables']['products']['Row'], 'minimum_stock'>> & {
           minimum_stock?: number
         }
+        Relationships: []
+      }
+      supply_sources: {
+        Row: {
+          id: string
+          name: string
+          resolution_type: SupplySourceResolutionType
+          sort_order: number
+          is_active: boolean
+          created_at: string
+          updated_at: string
+        }
+        Insert: Partial<Database['public']['Tables']['supply_sources']['Row']> & {
+          name: string
+          resolution_type: SupplySourceResolutionType
+        }
+        Update: Partial<Database['public']['Tables']['supply_sources']['Row']>
+        Relationships: []
+      }
+      supply_source_locale_config: {
+        Row: {
+          supply_source_id: string
+          store_id: string
+          created_at: string
+          updated_at: string
+        }
+        Insert: Partial<Database['public']['Tables']['supply_source_locale_config']['Row']> & {
+          supply_source_id: string
+          store_id: string
+        }
+        Update: Partial<Database['public']['Tables']['supply_source_locale_config']['Row']>
         Relationships: []
       }
       suppliers: {
@@ -364,6 +397,7 @@ export interface Database {
       purchase_orders: {
         Row: {
           id: string
+          purchase_number: number
           store_id: string
           supplier_id: string
           supplier_name: string
@@ -421,6 +455,40 @@ export interface Database {
         }
         Relationships: []
       }
+      store_purchase_requests: {
+        Row: {
+          id: string
+          store_id: string
+          submitted_by: string | null
+          notes: string | null
+          created_at: string
+        }
+        Insert: Partial<Database['public']['Tables']['store_purchase_requests']['Row']> & {
+          store_id: string
+        }
+        Update: Partial<Database['public']['Tables']['store_purchase_requests']['Row']>
+        Relationships: []
+      }
+      store_purchase_request_items: {
+        Row: {
+          id: string
+          store_purchase_request_id: string
+          product_id: string
+          product_name: string
+          requested_quantity: string
+          created_at: string
+        }
+        Insert: Partial<Omit<Database['public']['Tables']['store_purchase_request_items']['Row'], 'requested_quantity'>> & {
+          store_purchase_request_id: string
+          product_id: string
+          product_name: string
+          requested_quantity: number
+        }
+        Update: Partial<Omit<Database['public']['Tables']['store_purchase_request_items']['Row'], 'requested_quantity'>> & {
+          requested_quantity?: number
+        }
+        Relationships: []
+      }
     }
     Views: Record<string, never>
     Functions: {
@@ -439,6 +507,17 @@ export interface Database {
             quantity_ordered: number
             unit_price: number
             iva_rate: number
+          }[]
+        }
+        Returns: string
+      }
+      submit_store_purchase_request: {
+        Args: {
+          target_store_id: string
+          target_notes: string | null
+          target_items: {
+            product_id: string
+            requested_quantity: number
           }[]
         }
         Returns: string

@@ -6,25 +6,27 @@ import { Button } from '@/shared/components/Button'
 import { ROUTES } from '@/shared/constants/routes'
 import { cn } from '@/shared/utils/cn'
 
+// Solicitudes de Compra is store-scoped (store_purchase_request permission, migration 026),
+// same precedent as Conteos de Stock -- visible unconditionally here, not Administrator/
+// Purchasing-gated; RLS is what actually determines which stores' data a given account sees.
 const navItems = [
   { label: 'Products', to: ROUTES.PRODUCTS },
   { label: 'Suppliers', to: ROUTES.SUPPLIERS },
   { label: 'Inventario', to: ROUTES.INVENTORY },
   { label: 'Conteos de Stock', to: ROUTES.STOCK_COUNTS },
+  { label: 'Solicitudes de Compra', to: ROUTES.STORE_PURCHASE_REQUESTS },
 ]
 
 const adminOnlyNavItems = [
   { label: 'Categories', to: ROUTES.CATEGORIES },
+  { label: 'Supply Sources', to: ROUTES.SUPPLY_SOURCES },
   { label: 'Locales', to: ROUTES.STORES },
   { label: 'Personal', to: ROUTES.STAFF },
 ]
 
-// Purchase Suggestions is a role-based (not store-based) capability, per the approved business
-// design -- visible to Administrator and Purchasing, not to Retail Store/Production Center.
-const purchasingNavItems = [
-  { label: 'Sugerencias de Compra', to: ROUTES.PURCHASE_SUGGESTIONS },
-  { label: 'Compras', to: ROUTES.PURCHASES },
-]
+// Compras remains a role-based (not store-based) capability, per the approved business design
+// -- visible to Administrator and Purchasing, not to Retail Store/Production Center.
+const purchasingNavItems = [{ label: 'Compras', to: ROUTES.PURCHASES }]
 
 export function AppLayout() {
   const { user, signOut } = useAuth()

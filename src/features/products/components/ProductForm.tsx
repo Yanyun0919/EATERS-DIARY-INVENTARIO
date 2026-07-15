@@ -5,11 +5,13 @@ import type { Database } from '@/core/supabase/database.types'
 
 type Category = Database['public']['Tables']['categories']['Row']
 type Unit = Database['public']['Tables']['units']['Row']
+type SupplySource = Database['public']['Tables']['supply_sources']['Row']
 
 interface ProductFormProps {
   initialValues: ProductFormValues
   categories: Category[]
   units: Unit[]
+  supplySources: SupplySource[]
   onSubmit: (values: ProductFormValues) => Promise<void>
   submitLabel: string
   readOnly: boolean
@@ -18,7 +20,15 @@ interface ProductFormProps {
 const inputClasses =
   'w-full rounded-md border border-border bg-transparent px-3 py-2 text-sm outline-none focus:border-accent disabled:opacity-50'
 
-export function ProductForm({ initialValues, categories, units, onSubmit, submitLabel, readOnly }: ProductFormProps) {
+export function ProductForm({
+  initialValues,
+  categories,
+  units,
+  supplySources,
+  onSubmit,
+  submitLabel,
+  readOnly,
+}: ProductFormProps) {
   const [values, setValues] = useState(initialValues)
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [submitting, setSubmitting] = useState(false)
@@ -106,6 +116,27 @@ export function ProductForm({ initialValues, categories, units, onSubmit, submit
           ))}
         </select>
         {errors.baseUnitId && <p className="text-sm text-red-600">{errors.baseUnitId}</p>}
+      </div>
+
+      <div className="space-y-1">
+        <label htmlFor="supplySource" className="text-sm font-medium">
+          Supply Source
+        </label>
+        <select
+          id="supplySource"
+          value={values.supplySourceId}
+          onChange={(event) => setValues({ ...values, supplySourceId: event.target.value })}
+          disabled={readOnly}
+          className={inputClasses}
+        >
+          <option value="">Select a Supply Source</option>
+          {supplySources.map((supplySource) => (
+            <option key={supplySource.id} value={supplySource.id}>
+              {supplySource.name}
+            </option>
+          ))}
+        </select>
+        {errors.supplySourceId && <p className="text-sm text-red-600">{errors.supplySourceId}</p>}
       </div>
 
       <div className="space-y-1">

@@ -4,7 +4,7 @@ import { useStaffProfile } from '@/core/auth/useStaffProfile'
 import { ROUTES } from '@/shared/constants/routes'
 import { LoadingScreen } from '@/shared/components/LoadingScreen'
 import { getProduct, createProduct, updateProduct } from '@/features/products/api/products'
-import { useCategories, useUnits } from '@/features/products/hooks/useProductLookups'
+import { useCategories, useUnits, useSupplySources } from '@/features/products/hooks/useProductLookups'
 import { ProductForm } from '@/features/products/components/ProductForm'
 import type { ProductFormValues } from '@/features/products/schemas/product'
 import type { Database } from '@/core/supabase/database.types'
@@ -15,6 +15,7 @@ const emptyFormValues: ProductFormValues = {
   name: '',
   categoryId: '',
   baseUnitId: '',
+  supplySourceId: '',
   minimumStock: 0,
   isStockTracked: true,
 }
@@ -24,6 +25,10 @@ function toFormValues(product: Product): ProductFormValues {
     name: product.name,
     categoryId: product.category_id,
     baseUnitId: product.base_unit_id,
+    // Existing products may not have one assigned yet (migration 025) -- the empty string
+    // sentinel matches categoryId/baseUnitId's existing "not selected" convention, and the
+    // required schema validation forces a choice before the form can be saved again.
+    supplySourceId: product.supply_source_id ?? '',
     minimumStock: Number(product.minimum_stock),
     isStockTracked: product.is_stock_tracked,
   }
@@ -41,6 +46,7 @@ export function ProductFormPage() {
 
   const { data: categories } = useCategories()
   const { data: units } = useUnits()
+  const { data: supplySources } = useSupplySources()
 
   useEffect(() => {
     if (isNew || !id) return
@@ -76,6 +82,7 @@ export function ProductFormPage() {
       name: values.name,
       categoryId: values.categoryId,
       baseUnitId: values.baseUnitId,
+      supplySourceId: values.supplySourceId,
       minimumStock: values.minimumStock,
       isStockTracked: values.isStockTracked,
     }
@@ -104,6 +111,7 @@ export function ProductFormPage() {
         initialValues={product ? toFormValues(product) : emptyFormValues}
         categories={categories ?? []}
         units={units ?? []}
+        supplySources={supplySources ?? []}
         onSubmit={handleSubmit}
         submitLabel={isNew ? 'Create Product' : 'Save changes'}
         readOnly={readOnly}
