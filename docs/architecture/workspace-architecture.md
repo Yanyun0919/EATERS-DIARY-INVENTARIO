@@ -75,13 +75,23 @@ Request — the system never automatically creates demand.
 ### 2. Purchasing Workspace — unchanged
 
 **Owner**: Purchasing Staff. **Responsibilities**: Outstanding Demand, Store Filter (All /
-Single / Multiple Stores), Supplier Filter, Purchased Quantity (editable per row), Emergency
-Purchase, Finish Purchasing.
+Single Store), Supplier Filter, Purchased Quantity (editable per row), Emergency Purchase,
+Finish Purchasing.
 
-Finish Purchasing automatically creates Purchase Orders. Purchasers never manually create
-Purchase Orders — the prior manual creation screen is fully superseded, the same way Purchase
-Suggestions was superseded by the Store Purchase Request Draft. Purchasing represents
-operational reality, never demand.
+The Store Filter is an operational view only (Direct Store Procurement Principle,
+Purchasing Workspace Filtering Principle — `BUSINESS_RULES.md`). "All Stores" shows the
+consolidated purchasing demand across every store, with each store's own quantity visible per
+row — it never merges stores into one purchasing workflow or one Purchase Order. Every quantity
+shown already belongs to a specific store before purchasing begins.
+
+Finish Purchasing always operates on exactly one, currently-selected store. There is no "All
+Stores Finish" — pressing Finish while the consolidated view is active is not a valid action;
+the purchaser first selects the store being finished. If the purchaser is completing purchasing
+for several stores during the same procurement trip, that is one independent Finish action per
+store, never a single multi-store operation. Finish Purchasing automatically creates the one
+Purchase Order for that store. Purchasers never manually create Purchase Orders — the prior
+manual creation screen is fully superseded, the same way Purchase Suggestions was superseded by
+the Store Purchase Request Draft. Purchasing represents operational reality, never demand.
 
 ### 3. Central Kitchen Workspace — renamed and restructured (was "Production Workspace")
 

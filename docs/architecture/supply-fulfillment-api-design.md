@@ -101,17 +101,20 @@ Not needed. Execution Lock is derived, not a stored action (§ below) — there 
 ### `create_purchase_order()`
 
 Name kept, per the RPC Naming Principle — describes the record it creates, not the Workspace
-action that triggers it. Purpose: the sole moment Purchase Orders, their items, and fulfillment
-attributions are created — and the sole moment referenced Store Purchase Request Items lock.
-Trigger: Purchasing presses Finish. Caller: `can_manage_purchasing()`. Validation: per-item rules
-(product/supplier-product validity, demand-or-emergency mutual exclusivity, fulfillment sum ≤
-purchased quantity), applied per store-group since one Finish may span multiple stores.
-Transaction: one, however many stores the Finish action covers — no partial commit across
-stores. Success: one Purchase Order per store; every referenced Store Purchase Request Item now
-locked. Failure: any item's validation failing aborts the entire call. Idempotency: **at risk,
-and the most consequential of the three — needs an explicit idempotency key.** A retried call
-would otherwise create a second Purchase Order and double-count Purchased Quantity against the
-same request.
+action that triggers it. Purpose: the sole moment one store's Purchase Order, its items, and
+fulfillment attributions are created — and the sole moment referenced Store Purchase Request
+Items lock. Trigger: Purchasing presses Finish for the currently-selected store (Purchasing
+Workspace Filtering Principle, `BUSINESS_RULES.md` — Finish always targets exactly one store;
+there is no multi-store Finish, at the UI layer or the RPC layer). Caller:
+`can_manage_purchasing()`. Validation: per-item rules (product/supplier-product validity,
+demand-or-emergency mutual exclusivity, fulfillment sum ≤ purchased quantity). Transaction: one —
+the store's Purchase Order and every item, atomically. Success: one Purchase Order for the
+selected store; every referenced Store Purchase Request Item now locked. Failure: any item's
+validation failing aborts the entire call. Idempotency: **at risk, and the most consequential of
+the three — needs an explicit idempotency key.** A retried call would otherwise create a second
+Purchase Order and double-count Purchased Quantity against the same request. A purchaser
+finishing several stores in one procurement trip performs one independent Finish action, and one
+independent `create_purchase_order()` call with its own idempotency key, per store.
 
 ### Execution Lock — final definition
 

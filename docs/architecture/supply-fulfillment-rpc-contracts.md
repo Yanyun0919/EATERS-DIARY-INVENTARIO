@@ -156,38 +156,39 @@ retrying a cancellation against an already-cancelled (now-deleted) request simpl
 
 ---
 
-## `create_purchase_order(target_supplier_id uuid, target_stores jsonb, idempotency_key uuid)`
+## `create_purchase_order(target_store_id uuid, target_supplier_id uuid, target_notes text, target_items jsonb, idempotency_key uuid)`
 
-**Purpose**: the sole write path for Purchase Orders — one Finish Purchasing action, one or more
-stores, fully atomic.
+**Purpose**: the sole write path for Purchase Orders — one Finish Purchasing action, exactly one
+store, fully atomic. Per the Purchasing Workspace Filtering Principle and Direct Store
+Procurement Principle (`BUSINESS_RULES.md`), Finish Purchasing always targets exactly one,
+currently-selected store — there is no multi-store Finish, at the UI layer or the RPC layer. A
+purchaser finishing several stores in one procurement trip performs one independent Finish
+action, and one independent call to this RPC with its own `idempotency_key`, per store.
 
 **Input Contract**:
 ```
+target_store_id: uuid (required)
 target_supplier_id: uuid (required)
-target_stores: jsonb array, each element:
+target_notes: text | null
+target_items: jsonb array, each element:
   {
-    store_id: uuid (required, unique within the array)
-    notes: text | null
-    items: jsonb array, each element:
-      {
-        product_id: uuid (required)
-        supplier_product_id: uuid (required)
-        quantity_ordered: numeric > 0 (required)
-        unit_price: numeric >= 0 (required)
-        iva_rate: numeric >= 0 (optional, defaults to the supplier product's own rate)
-        fulfillments: jsonb array (optional, empty/absent = Emergency), each element:
-          { store_purchase_request_item_id: uuid, fulfilled_quantity: numeric > 0 }
-        emergency_reason_key: text (required iff fulfillments is empty)
-        emergency_reason_note: text | null (only meaningful when emergency_reason_key = 'other')
-      }
+    product_id: uuid (required)
+    supplier_product_id: uuid (required)
+    quantity_ordered: numeric > 0 (required)
+    unit_price: numeric >= 0 (required)
+    iva_rate: numeric >= 0 (optional, defaults to the supplier product's own rate)
+    fulfillments: jsonb array (optional, empty/absent = Emergency), each element:
+      { store_purchase_request_item_id: uuid, fulfilled_quantity: numeric > 0 }
+    emergency_reason_key: text (required iff fulfillments is empty)
+    emergency_reason_note: text | null (only meaningful when emergency_reason_key = 'other')
   }
 idempotency_key: uuid (required)
 ```
 
-**Validation Sequence** (per store-group, within the one call):
+**Validation Sequence**:
 1. Caller authorized (`can_manage_purchasing()`). → `UNAUTHORIZED`
 2. Idempotency check — return early on match.
-3. `target_stores` non-empty, and every `store_id` within it distinct. → `EMPTY_ITEMS`
+3. `target_items` non-empty. → `EMPTY_ITEMS`
 4. Supplier exists. → `SUPPLIER_NOT_FOUND`
 5. Per item: product exists → `PRODUCT_NOT_FOUND`; supplier product exists →
    `SUPPLIER_PRODUCT_NOT_FOUND`; supplier product belongs to `target_supplier_id` →
@@ -200,11 +201,10 @@ idempotency_key: uuid (required)
 9. If fulfillments present: `Σ fulfilled_quantity ≤ quantity_ordered`. →
    `FULFILLMENT_EXCEEDS_PURCHASED`
 
-**Transaction Boundary**: one transaction for the entire call — every store's Purchase Order,
-every item, every fulfillment. Any single failure anywhere aborts everything; no store's order
-partially commits while another's fails.
+**Transaction Boundary**: one transaction — the store's Purchase Order, every item, every
+fulfillment. Any single item's failure aborts the entire call.
 
-**Success Response**: `uuid[]` — one Purchase Order id per store in `target_stores`, same order.
+**Success Response**: `uuid` — the new Purchase Order's id.
 
 **Error Codes**: `UNAUTHORIZED`, `EMPTY_ITEMS`, `SUPPLIER_NOT_FOUND`, `PRODUCT_NOT_FOUND`,
 `SUPPLIER_PRODUCT_NOT_FOUND`, `SUPPLIER_PRODUCT_MISMATCH`, `FULFILLMENT_CONFLICT`,
@@ -213,7 +213,10 @@ partially commits while another's fails.
 
 **Idempotency Behavior**: required key; see mechanism above. This is the single most
 consequential RPC to get this right for — a retried call without protection would double-count
-Purchased Quantity against real demand.
+Purchased Quantity against real demand. Because each call now creates exactly one
+`purchase_orders` row, a plain `unique (idempotency_key)` constraint on that table's header is
+sufficient — the same shape already used by `submit_store_purchase_request()` and
+`submit_store_goods_receipt()`, no composite constraint needed.
 
 ---
 

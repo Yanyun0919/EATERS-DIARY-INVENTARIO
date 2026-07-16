@@ -501,6 +501,82 @@ ownership (Rule 8, Rule 12). Operational simplicity is preferred over database r
 complexity — this workflow is supported by operational process, not additional database
 structures.
 
+### Direct Store Procurement Principle
+
+The Purchasing Workspace provides a consolidated purchasing view only for operational
+convenience.
+
+The consolidated view exists to help the purchaser buy identical products for multiple stores
+during a single procurement trip.
+
+It is NOT a centralized purchasing process.
+
+It is NOT a purchase-then-allocation workflow.
+
+Every quantity shown in the consolidated purchasing view already belongs to a specific store
+before purchasing begins.
+
+The purchaser buys products directly for each individual store during the same procurement trip
+and delivers them directly to the stores.
+
+Therefore:
+
+- Every store always owns its own independent Purchase Order.
+- There is never a "master" Purchase Order.
+- There is never a post-purchase allocation or distribution workflow.
+- The Purchasing Workspace is only a consolidated operational view, not a business entity.
+- The system must never introduce concepts such as Purchase Allocation, Inventory Distribution,
+  Split Inventory, or Central Warehouse Allocation.
+
+The purchaser must be able to see, directly in the consolidated purchasing table, the required
+quantity for every store for every product.
+
+Example:
+
+| Product     | Total | Mr. Sando | CCC Amparo | CCC Tetuán |
+|-------------|-------|-----------|------------|------------|
+| Chicken Leg | 45 kg | 10 kg     | 15 kg      | 20 kg      |
+
+The purchaser should never need to open individual Purchase Orders just to know how much belongs
+to each store.
+
+Finish Purchasing may be performed independently for each store.
+
+The consolidated purchasing table remains available throughout the purchasing process, while
+each store's Purchase Order progresses independently.
+
+### Purchasing Workspace Filtering Principle
+
+The Purchasing Workspace is always a single workspace.
+
+The default view is "All Stores", showing the consolidated purchasing demand.
+
+The workspace must support filtering by individual store.
+
+Changing the filter only changes the operational view.
+
+It does not create a different purchasing workflow.
+
+It does not create a different Purchase Order model.
+
+It does not create a different Business Record.
+
+When "All Stores" is selected, the purchaser must see:
+
+- Total quantity.
+- Quantity required by each individual store.
+
+The purchaser should never need to open a Purchase Order simply to know how much belongs to each
+store.
+
+When a single store is selected, the same workspace displays only that store's purchasing
+demand.
+
+Finish Purchasing always operates on exactly one selected store. There is no "All Stores Finish"
+operation. If the purchaser completes purchasing for multiple stores during the same procurement
+trip, the purchaser performs one independent Finish action per store — the system never combines
+them into a single multi-store operation, at the UI layer or the RPC layer.
+
 ### Notifications Principle
 
 Notifications are reminders. Notifications are NOT business workflows.
