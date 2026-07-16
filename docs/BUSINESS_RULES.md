@@ -477,10 +477,18 @@ never think in incremental demand: they simply recount inventory (Weekly Count o
 and submit the latest required quantities. This applies equally to both counting workflows — the
 counting workflow differs, the business outcome is identical.
 
-Once Purchasing accepts the request, it becomes operationally locked: the Store can no longer
-modify it, quantities cannot be changed, products cannot be added or removed. If additional
-replenishment is required afterward, the Store performs a new Weekly Count or Quick Count and
-creates a completely new Store Purchase Request — a completely new business event.
+If the Store removes the last remaining product from a still-unlocked request, the request is
+automatically cancelled — no empty Store Purchase Request may remain. This is not a violation of
+Business Record immutability: before Purchasing accepts it, a request is not yet a Business
+Record, because execution has never begun on it. No status field represents this — the request
+is simply gone, the same way it never has a status while editable.
+
+Once Purchasing accepts the request (Execution Lock — the first successful Purchase Order
+creation against it, never before), it becomes operationally locked: the Store can no longer
+modify it, quantities cannot be changed, products cannot be added or removed, and it can no
+longer be cancelled. If additional replenishment is required afterward, the Store performs a new
+Weekly Count or Quick Count and creates a completely new Store Purchase Request — a completely
+new business event.
 
 One operational event produces one Store Purchase Request. A new operational event always
 creates a new Store Purchase Request. The system never combines quantities from different
